@@ -1,0 +1,374 @@
+{
+  "version": 3,
+  "skills": {
+    "find-skills": {
+      "source": "vercel-labs/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/vercel-labs/skills.git",
+      "skillFolderHash": "",
+      "installedAt": "2026-03-19T06:50:11.492Z",
+      "updatedAt": "2026-03-19T06:50:11.492Z"
+    },
+    "social-media-marketing": {
+      "source": "dengineproblem/agents-monorepo",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/dengineproblem/agents-monorepo.git",
+      "skillPath": ".claude/skills/social-media-marketing/SKILL.md",
+      "skillFolderHash": "8f0c53ba6f9bf42c408562d4565a84819feeace1",
+      "installedAt": "2026-04-07T04:39:58.376Z",
+      "updatedAt": "2026-04-07T04:39:58.376Z"
+    },
+    "marketing-psychology": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/coreyhaines31/marketingskills.git",
+      "skillPath": "skills/marketing-psychology/SKILL.md",
+      "skillFolderHash": "ec8b7c10f5707ab69cd6e658a75480cd3e18ceef",
+      "pluginName": "marketing-skills",
+      "installedAt": "2026-04-07T04:42:58.953Z",
+      "updatedAt": "2026-04-07T04:42:58.953Z"
+    },
+    "marketing-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "marketing-skill/SKILL.md",
+      "skillFolderHash": "9bf28e65703da0e7a413f9d0ab202da3a3c29438",
+      "installedAt": "2026-04-07T04:44:30.395Z",
+      "updatedAt": "2026-04-08T09:38:34.675Z"
+    },
+    "brainstorming": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/obra/superpowers.git",
+      "skillPath": "skills/brainstorming/SKILL.md",
+      "skillFolderHash": "f260c775073816860fef8a37c032ac77e2ff5821",
+      "installedAt": "2026-04-07T04:45:12.641Z",
+      "updatedAt": "2026-04-08T09:46:28.054Z"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/anthropics/skills.git",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "skillFolderHash": "928950704df8a8b885c03de5da626331e6f29cf8",
+      "pluginName": "example-skills",
+      "installedAt": "2026-04-07T04:47:43.359Z",
+      "updatedAt": "2026-04-08T09:44:58.097Z"
+    },
+    "engineering-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/SKILL.md",
+      "skillFolderHash": "2c07801bdbce711d527785d658364b8f59ecc5fc",
+      "installedAt": "2026-04-07T04:55:49.988Z",
+      "updatedAt": "2026-04-08T09:39:22.900Z"
+    },
+    "product-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "product-team/SKILL.md",
+      "skillFolderHash": "ffebede4c7ca6e5ba7c03f784a33cf74973d50fa",
+      "installedAt": "2026-04-07T04:56:21.725Z",
+      "updatedAt": "2026-04-08T09:41:58.073Z"
+    },
+    "browserstack": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/browserstack/SKILL.md",
+      "skillFolderHash": "7357ed8611d75bea1461d36e4bc593c7ab0e1211",
+      "installedAt": "2026-04-07T05:02:15.005Z",
+      "updatedAt": "2026-04-07T05:02:15.005Z"
+    },
+    "challenge": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "c-level-advisor/executive-mentor/skills/challenge/SKILL.md",
+      "skillFolderHash": "60c8ea66da7fb44e941d99d39bf5a7e3890dc238",
+      "installedAt": "2026-04-07T05:02:15.091Z",
+      "updatedAt": "2026-04-07T05:02:15.091Z"
+    },
+    "coverage": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/coverage/SKILL.md",
+      "skillFolderHash": "0c03d9b5fd0c46e0ad7916fe77454f94bd2902b7",
+      "installedAt": "2026-04-07T05:02:15.158Z",
+      "updatedAt": "2026-04-07T05:02:15.158Z"
+    },
+    "engineering-advanced-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/SKILL.md",
+      "skillFolderHash": "0fcffeff5e44462060ee0e4435282c7fe5ceed5f",
+      "installedAt": "2026-04-07T05:02:15.220Z",
+      "updatedAt": "2026-04-08T09:40:01.149Z"
+    },
+    "eval": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/agenthub/skills/eval/SKILL.md",
+      "skillFolderHash": "709d7db21503927199a61ce71ced126488eec01b",
+      "installedAt": "2026-04-07T05:02:15.365Z",
+      "updatedAt": "2026-04-07T05:02:15.365Z"
+    },
+    "extract": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/self-improving-agent/skills/extract/SKILL.md",
+      "skillFolderHash": "3410f43e71c8d28be13a745ac7258cd88f5e09af",
+      "installedAt": "2026-04-07T05:02:15.426Z",
+      "updatedAt": "2026-04-07T05:02:15.426Z"
+    },
+    "finance-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "finance/SKILL.md",
+      "skillFolderHash": "67f2cd37711f4e6200703cf9e8c52a61cfa4b957",
+      "installedAt": "2026-04-07T05:02:15.492Z",
+      "updatedAt": "2026-04-08T09:40:13.496Z"
+    },
+    "fix": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/fix/SKILL.md",
+      "skillFolderHash": "a292def35bb7141fbac59f5f12ddce9bc5804f3d",
+      "installedAt": "2026-04-07T05:02:15.562Z",
+      "updatedAt": "2026-04-07T05:02:15.562Z"
+    },
+    "generate": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/generate/SKILL.md",
+      "skillFolderHash": "4c63377edca005c8a6f88898fd4ed63aa10ec074",
+      "installedAt": "2026-04-07T05:02:15.638Z",
+      "updatedAt": "2026-04-07T05:02:15.638Z"
+    },
+    "hard-call": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "c-level-advisor/executive-mentor/skills/hard-call/SKILL.md",
+      "skillFolderHash": "028c9caa6b37e953b82b679f0c4a79d3d02f5757",
+      "installedAt": "2026-04-07T05:02:15.700Z",
+      "updatedAt": "2026-04-07T05:02:15.700Z"
+    },
+    "init": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/init/SKILL.md",
+      "skillFolderHash": "18ba554bb6946b3977adde98c04b76368d09e32f",
+      "installedAt": "2026-04-07T05:02:15.763Z",
+      "updatedAt": "2026-04-07T05:02:15.763Z"
+    },
+    "loop": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/autoresearch-agent/skills/loop/SKILL.md",
+      "skillFolderHash": "10da633b50838d0a49155612610ddfc717a20f30",
+      "installedAt": "2026-04-07T05:02:15.834Z",
+      "updatedAt": "2026-04-07T05:02:15.834Z"
+    },
+    "merge": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/agenthub/skills/merge/SKILL.md",
+      "skillFolderHash": "14fad727eb1e2b86c70eef94c947da310f05afc9",
+      "installedAt": "2026-04-07T05:02:15.983Z",
+      "updatedAt": "2026-04-07T05:02:15.983Z"
+    },
+    "migrate": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/migrate/SKILL.md",
+      "skillFolderHash": "f320da680f37d93f5598b4034eef006b40f232fe",
+      "installedAt": "2026-04-07T05:02:16.065Z",
+      "updatedAt": "2026-04-07T05:02:16.065Z"
+    },
+    "pm-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "project-management/SKILL.md",
+      "skillFolderHash": "c4f6993cb2e31e2a005b2c21246cb46ff5bdf631",
+      "installedAt": "2026-04-07T05:02:16.132Z",
+      "updatedAt": "2026-04-07T05:02:16.132Z"
+    },
+    "postmortem": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "c-level-advisor/executive-mentor/skills/postmortem/SKILL.md",
+      "skillFolderHash": "37bad591f71abeb5ee7efb9bca48aab7a2e928d7",
+      "installedAt": "2026-04-07T05:02:16.204Z",
+      "updatedAt": "2026-04-07T05:02:16.204Z"
+    },
+    "promote": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/self-improving-agent/skills/promote/SKILL.md",
+      "skillFolderHash": "1e7fe36517536b0139fa2d18a1b90f15252b0a76",
+      "installedAt": "2026-04-07T05:02:16.340Z",
+      "updatedAt": "2026-04-07T05:02:16.340Z"
+    },
+    "ra-qm-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "ra-qm-team/SKILL.md",
+      "skillFolderHash": "c8d110946f7332a93bf875d8ffdf7c9b0c5b3c6f",
+      "installedAt": "2026-04-07T05:02:16.411Z",
+      "updatedAt": "2026-04-08T09:50:20.335Z"
+    },
+    "remember": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/self-improving-agent/skills/remember/SKILL.md",
+      "skillFolderHash": "12d9a818ee48053b55d9df577a45dff6f586de91",
+      "installedAt": "2026-04-07T05:02:16.480Z",
+      "updatedAt": "2026-04-07T05:02:16.480Z"
+    },
+    "report": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/report/SKILL.md",
+      "skillFolderHash": "c65e1f261cc9b1a3ddb6d996382ca205a9c973e4",
+      "installedAt": "2026-04-07T05:02:16.549Z",
+      "updatedAt": "2026-04-07T05:02:16.549Z"
+    },
+    "resume": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/autoresearch-agent/skills/resume/SKILL.md",
+      "skillFolderHash": "b2a79005c93597356d14a43e47338470b0ea206c",
+      "installedAt": "2026-04-07T05:02:16.623Z",
+      "updatedAt": "2026-04-07T05:02:16.623Z"
+    },
+    "review": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/review/SKILL.md",
+      "skillFolderHash": "1be0ea3f04742a5276a922bec103213e4e949055",
+      "installedAt": "2026-04-07T05:02:16.685Z",
+      "updatedAt": "2026-04-08T09:43:01.128Z"
+    },
+    "run": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/autoresearch-agent/skills/run/SKILL.md",
+      "skillFolderHash": "1e310fc90b7a60b6f9c3f44a9a8b69da6002750b",
+      "installedAt": "2026-04-07T05:02:16.749Z",
+      "updatedAt": "2026-04-07T05:02:16.749Z"
+    },
+    "setup": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/autoresearch-agent/skills/setup/SKILL.md",
+      "skillFolderHash": "2adacdf2690f42c9dc47e6ccf20a244636d7b659",
+      "installedAt": "2026-04-07T05:02:16.821Z",
+      "updatedAt": "2026-04-07T05:02:16.821Z"
+    },
+    "spawn": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering/agenthub/skills/spawn/SKILL.md",
+      "skillFolderHash": "c3de442e4127559b95365feeb09a7cb8a293b6d7",
+      "installedAt": "2026-04-07T05:02:16.883Z",
+      "updatedAt": "2026-04-07T05:02:16.883Z"
+    },
+    "status": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/self-improving-agent/skills/status/SKILL.md",
+      "skillFolderHash": "d535a9e8c2ff32b3dd9924a7631d44e562ea79d9",
+      "installedAt": "2026-04-07T05:02:16.938Z",
+      "updatedAt": "2026-04-07T05:02:16.938Z"
+    },
+    "stress-test": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "c-level-advisor/executive-mentor/skills/stress-test/SKILL.md",
+      "skillFolderHash": "f82e704d7480127d5834ed1e39f74225918e21f2",
+      "installedAt": "2026-04-07T05:02:17.002Z",
+      "updatedAt": "2026-04-07T05:02:17.002Z"
+    },
+    "testrail": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "engineering-team/playwright-pro/skills/testrail/SKILL.md",
+      "skillFolderHash": "cf6e09a0bc18b36f0c0b3b41964a72557f5c6066",
+      "installedAt": "2026-04-07T05:02:17.064Z",
+      "updatedAt": "2026-04-07T05:02:17.064Z"
+    },
+    "board-prep": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "c-level-advisor/executive-mentor/skills/board-prep/SKILL.md",
+      "skillFolderHash": "e906cf7cb332d4a1316f84f3be0ce62f452193ee",
+      "installedAt": "2026-04-07T05:02:17.126Z",
+      "updatedAt": "2026-04-07T05:02:17.126Z"
+    },
+    "business-growth-skills": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "business-growth/SKILL.md",
+      "skillFolderHash": "4fe8decdcf6bd24c774a8f2e1bb5e91c65255a9d",
+      "installedAt": "2026-04-07T05:02:17.182Z",
+      "updatedAt": "2026-04-08T09:42:39.411Z"
+    },
+    "c-level-advisor": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "sourceUrl": "https://github.com/alirezarezvani/claude-skills.git",
+      "skillPath": "c-level-advisor/SKILL.md",
+      "skillFolderHash": "451e30d074f1ca9004795816e0253f20bf439ae0",
+      "installedAt": "2026-04-07T05:02:17.249Z",
+      "updatedAt": "2026-04-08T09:40:53.828Z"
+    }
+  },
+  "dismissed": {
+    "findSkillsPrompt": true
+  },
+  "lastSelectedAgents": [
+    "amp",
+    "antigravity",
+    "cline",
+    "codex",
+    "cursor",
+    "deepagents",
+    "firebender",
+    "gemini-cli",
+    "github-copilot",
+    "kimi-cli",
+    "opencode",
+    "warp"
+  ]
+}
