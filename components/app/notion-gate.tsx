@@ -22,8 +22,8 @@ export function NotionGate({ error }: NotionGateProps) {
             Note API Connector
           </CardTitle>
           <CardDescription className="mx-auto max-w-md text-center text-base leading-relaxed">
-            Kết nối Notion workspace để vào khu vực phân tích. Token luôn được xử lý ở server và
-            không lộ ra trình duyệt.
+            Connect Notion workspace to access the analytics area. Tokens are always processed on the server and
+            are never exposed to the browser.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -34,11 +34,11 @@ export function NotionGate({ error }: NotionGateProps) {
             </Button>
           </a>
           <Alert>
-            Pop-up phải được bật tạm thời khi kết nối OAuth. Sau khi kết nối xong có thể tắt lại.
+            Pop-ups must be temporarily enabled during OAuth connection. They can be disabled afterwards.
           </Alert>
           {error ? (
             <p className="text-center text-sm text-red-600">
-              Kết nối thất bại. Vui lòng thử lại. ({error})
+              Connection failed. Please try again. ({error})
             </p>
           ) : null}
         </CardContent>

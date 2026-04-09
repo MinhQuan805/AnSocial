@@ -498,7 +498,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       if (!response.ok) {
         throw new Error(
           payload?.error?.message ??
-            (isInsightEndpoint ? "Không thể lấy dữ liệu insight." : "Không thể lấy dữ liệu media."),
+            (isInsightEndpoint ? "Failed to fetch insight data." : "Failed to fetch media data."),
         );
       }
 
@@ -508,18 +508,18 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
         setMediaReport(null);
 
         if (nextReport.query.warnings.length > 0) {
-          setStatus(`Đã lấy dữ liệu insight với cảnh báo: ${nextReport.query.warnings[0]}`);
+          setStatus(`Insight data fetched with warnings: ${nextReport.query.warnings[0]}`);
         } else {
-          setStatus("Đã lấy dữ liệu insight thành công.");
+          setStatus("Insight data fetched successfully.");
         }
       } else {
         const nextReport = payload as MediaReport;
         setMediaReport(nextReport);
         setInsightReport(null);
-        setStatus("Đã lấy dữ liệu account media thành công.");
+        setStatus("Account media data fetched successfully.");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi không xác định.");
+      setError(err instanceof Error ? err.message : "Unknown error.");
     } finally {
       setRunning(false);
     }
@@ -527,7 +527,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
   const saveResult = async () => {
     if (!insightReport) {
-      setError("Save chỉ hỗ trợ dữ liệu Account Insight.");
+      setError("Save only supports Account Insight data.");
       return;
     }
 
@@ -549,14 +549,14 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "Không thể lưu dữ liệu.");
+        throw new Error(payload?.error?.message ?? "Failed to save data.");
       }
 
       setStatus(
-        `Đã lưu dữ liệu. Lượt lưu miễn phí còn lại: ${payload.remainingFreeSaves}.`,
+        `Data saved. Remaining free saves: ${payload.remainingFreeSaves}.`,
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi không xác định.");
+      setError(err instanceof Error ? err.message : "Unknown error.");
     } finally {
       setSaving(false);
     }
@@ -564,12 +564,12 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
   const exportN8n = async () => {
     if (!insightReport) {
-      setError("Export n8n chỉ hỗ trợ dữ liệu Account Insight.");
+      setError("Export n8n only supports Account Insight data.");
       return;
     }
 
     if (!notionPageId.trim()) {
-      setError("Vui lòng nhập Notion Page ID trước khi export n8n.");
+      setError("Please enter Notion Page ID before exporting to n8n.");
       return;
     }
 
@@ -594,7 +594,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
       if (!response.ok) {
         const payload = await response.json();
-        throw new Error(payload?.error?.message ?? "Không thể export n8n workflow.");
+        throw new Error(payload?.error?.message ?? "Failed to export n8n workflow.");
       }
 
       const blob = await response.blob();
@@ -605,9 +605,9 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       anchor.click();
       URL.revokeObjectURL(objectUrl);
 
-      setStatus("Đã export n8n workflow JSON.");
+      setStatus("Exported n8n workflow JSON.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Lỗi không xác định.");
+      setError(err instanceof Error ? err.message : "Unknown error.");
     } finally {
       setExporting(false);
     }
@@ -1217,7 +1217,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
                 {session.facebookConnected ? (
                   <div className="flex h-11 items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 text-sm text-emerald-700">
                     <CheckCircle2 className="h-4 w-4" />
-                    Facebook da ket noi
+                    Facebook connected
                   </div>
                 ) : (
                   <a href="/api/auth/facebook/start" className="inline-flex">
@@ -1283,8 +1283,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
                 checked={saveToNotion}
                 onChange={(event) => setSaveToNotion(event.target.checked)}
               />
-              <Label htmlFor="saveToNotion">Luu dong thoi vao Notion</Label>
-              <Badge>Free con {session.remainingFreeSaves} luot</Badge>
+              <Label htmlFor="saveToNotion">Save to Notion simultaneously</Label>
+              <Badge>{session.remainingFreeSaves} free saves left</Badge>
             </div>
 
             {status ? (
@@ -1313,11 +1313,11 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
           <CardContent>
             {isInsightEndpoint && !insightReport ? (
               <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-                Chua co du lieu. Nhan Run de bat dau.
+                No data yet. Press Run to start.
               </div>
             ) : isMediaEndpoint && !mediaReport ? (
               <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-                Chua co du lieu media. Nhan Run de bat dau.
+                No media data yet. Press Run to start.
               </div>
             ) : isInsightEndpoint && insightReport ? (
               <Tabs defaultValue="table">
@@ -1438,7 +1438,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
               </Tabs>
             ) : (
               <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-                Chua co du lieu. Nhan Run de bat dau.
+                No data yet. Press Run to start.
               </div>
             )}
           </CardContent>

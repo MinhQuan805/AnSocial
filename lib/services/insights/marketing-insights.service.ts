@@ -351,16 +351,16 @@ export class MarketingInsightsService {
 
     if (args.engagementRate < 0.03) {
       output.push({
-        title: "Tăng tỷ lệ tương tác",
+        title: "Increase engagement rate",
         summary:
-          "Engagement thấp hơn mức kỳ vọng. Hãy ưu tiên nội dung giải quyết vấn đề cụ thể và CTA rõ ràng hơn.",
+          "Engagement is below expectations. Prioritize content that addresses specific problems and features clearer CTAs.",
         confidence: "high",
       });
     } else {
       output.push({
-        title: "Duy trì nhịp nội dung đang hiệu quả",
+        title: "Maintain effective content pacing",
         summary:
-          "Tỷ lệ tương tác ở mức ổn. Nên giữ cấu trúc nội dung hiện tại và thử nghiệm A/B tiêu đề để tăng thêm Reach.",
+          "Engagement rate is stable. Keep the current content structure and A/B test headlines to increase Reach.",
         confidence: "medium",
       });
     }
@@ -381,8 +381,8 @@ export class MarketingInsightsService {
 
       if (best) {
         output.push({
-          title: "Định dạng nội dung ưu tiên",
-          summary: `Trong giai đoạn hiện tại, định dạng ${best.key} cho điểm tương tác trung bình cao nhất.`,
+          title: "Preferred content format",
+          summary: `Currently, the ${best.key} format yields the highest average engagement score.`,
           confidence: "medium",
         });
       }
@@ -391,8 +391,8 @@ export class MarketingInsightsService {
     const bestHour = Object.entries(args.onlineFollowers).sort((a, b) => b[1] - a[1])[0];
     if (bestHour) {
       output.push({
-        title: "Khung giờ vàng đề xuất",
-        summary: `Khung giờ có nhiều follower online nhất là khoảng ${bestHour[0]}:00, nên ưu tiên lịch đăng trong mốc này.`,
+        title: "Recommended golden hour",
+        summary: `The time slot with the most followers online is around ${bestHour[0]}:00, prioritize scheduling posts during this period.`,
         confidence: "high",
       });
     }
