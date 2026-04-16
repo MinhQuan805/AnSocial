@@ -5,6 +5,11 @@ import type {
   InstagramAccount,
   IntegrationRecord,
   MarketingInsightReport,
+  NotionPageReference,
+  NotionIntegration,
+  FacebookIntegration,
+  AutoScheduleConfig,
+  SaveInsightPayload,
 } from "@/lib/core/domain";
 
 export interface IFacebookGraphRepository {
@@ -44,23 +49,80 @@ export interface INotionRepository {
     code: string,
     redirectUri: string,
   ): Promise<{ accessToken: string; workspaceId: string; workspaceName: string }>;
+  listAvailablePages(accessToken: string): Promise<NotionPageReference[]>;
   appendInsightReport(args: {
     accessToken: string;
     pageId: string;
     report: MarketingInsightReport;
   }): Promise<{ message: string }>;
+  createDatabase(args: {
+    accessToken: string;
+    parentPageId: string;
+    databaseTitle: string;
+    properties?: Record<string, unknown>;
+    defaultFields?: string[];
+  }): Promise<{ id: string; title: string }>;
+  createPage(args: {
+    accessToken: string;
+    parentWorkspaceId: string;
+    pageTitle: string;
+  }): Promise<{ id: string; title: string }>;
+  saveDatabasePage(args: {
+    accessToken: string;
+    databaseId: string;
+    report: MarketingInsightReport;
+  }): Promise<{ id: string; url: string }>;
+  saveMediaDatabasePage(args: {
+    accessToken: string;
+    databaseId: string;
+    report: NonNullable<SaveInsightPayload["mediaReport"]>;
+  }): Promise<{ id: string; url: string }>;
+  validateDatabaseProperties(args: {
+    accessToken: string;
+    databaseId: string;
+  }): Promise<{ isValid: boolean; missingProperties: string[] }>;
 }
 
+// ============================================================================
+// NEW NORMALIZED REPOSITORY INTERFACE
+// ============================================================================
+
 export interface ISupabaseRepository {
-  getIntegration(sessionId: string): Promise<IntegrationRecord | null>;
-  upsertIntegration(
-    sessionId: string,
-    patch: Partial<IntegrationRecord>,
-  ): Promise<IntegrationRecord>;
-  countSnapshots(sessionId: string): Promise<number>;
+  // Notion integrations
+  getNotionIntegration(userId: string): Promise<NotionIntegration | null>;
+  upsertNotionIntegration(
+    userId: string,
+    patch: Partial<NotionIntegration>,
+  ): Promise<NotionIntegration>;
+
+  // Facebook integrations
+  getFacebookIntegration(userId: string): Promise<FacebookIntegration | null>;
+  upsertFacebookIntegration(
+    userId: string,
+    patch: Partial<FacebookIntegration>,
+  ): Promise<FacebookIntegration>;
+
+  // Auto schedule configs
+  getAutoScheduleConfig(userId: string): Promise<AutoScheduleConfig | null>;
+  upsertAutoScheduleConfig(
+    userId: string,
+    patch: Partial<AutoScheduleConfig>,
+  ): Promise<AutoScheduleConfig>;
+
+  // Insight snapshots
+  countSnapshots(userId: string): Promise<number>;
   saveSnapshot(args: {
-    sessionId: string;
+    userId: string;
     sourceAccount: string;
     report: MarketingInsightReport;
   }): Promise<void>;
+
+  // @deprecated Use getNotionIntegration, getFacebookIntegration, getAutoScheduleConfig
+  getIntegration(userId: string): Promise<IntegrationRecord | null>;
+
+  // @deprecated Use upsertNotionIntegration, upsertFacebookIntegration, upsertAutoScheduleConfig
+  upsertIntegration(
+    userId: string,
+    patch: Partial<IntegrationRecord>,
+  ): Promise<IntegrationRecord>;
 }

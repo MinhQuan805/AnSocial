@@ -1,44 +1,35 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { ConsoleApp } from "@/components/app/console-app";
 import { env } from "@/lib/config/env";
-import { services } from "@/lib/services/factory";
+import { getServices } from "@/lib/services/factory";
 
 export default async function ConsolePage() {
-  const cookieStore = await cookies();
-  const sessionId = cookieStore.get(services.sessionService.cookieName)?.value;
+  const services = getServices();
+  const userId = await services.sessionService.requireFromServerComponent();
 
-  if (!sessionId) {
-    redirect("/");
-  }
-
-  const integration = await services.supabaseRepo.getIntegration(sessionId);
-  if (!integration?.notionAccessToken) {
-    redirect("/");
-  }
-
-  let accounts: Array<{ id: string; username: string }> = [];
-  if (integration.facebookAccessToken) {
-    try {
-      accounts = (await services.facebookRepo.getInstagramAccounts(integration.facebookAccessToken)).map(
-        (item) => ({ id: item.id, username: item.username }),
-      );
-    } catch {
-      accounts = [];
-    }
-  }
-
-  const saveCount = await services.supabaseRepo.countSnapshots(sessionId);
+  const [scheduleConfig, saveCount] = await Promise.all([
+    services.supabaseRepo.getAutoScheduleConfig(userId),
+    services.supabaseRepo.countSnapshots(userId),
+  ]);
 
   return (
     <ConsoleApp
       session={{
-        notionWorkspaceName: integration.notionWorkspaceName ?? null,
-        notionTargetPageId: integration.notionTargetPageId ?? null,
-        facebookConnected: Boolean(integration.facebookAccessToken),
+        sessionId: userId,
+        notionWorkspaceName: null,
+        notionTargetPageId: null,
+        notionTargetPageIds: [],
+        notionPages: [],
+        notionDatabases: [],
+        facebookConnected: false,
+        facebookTokenExpired: false,
+        autoSchedule: {
+          enabled: scheduleConfig?.enabled ?? false,
+          frequency: scheduleConfig?.frequency ?? "daily",
+          time: scheduleConfig?.time ?? "09:00",
+          timezone: scheduleConfig?.timezone ?? "UTC",
+        },
         remainingFreeSaves: Math.max(env.APP_FREE_SAVE_LIMIT - saveCount, 0),
-        accounts,
+        accounts: [],
       }}
     />
   );

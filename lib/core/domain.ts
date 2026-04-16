@@ -2,7 +2,7 @@ export type InsightPeriod = "day" | "week" | "month" | "lifetime";
 
 export type InsightMetricType = "total_value" | "time_series";
 
-export type InsightTimeframe = "this_week" | "this_month";
+export type InsightTimeframe = "this_week" | "this_month" | "last_month" | "last_14_days" | "last_30_days" | "last_90_days" | "prev_month";
 
 export type InsightBreakdown =
   | "contact_button_type"
@@ -14,7 +14,7 @@ export type InsightBreakdown =
   | "country"
   | "gender";
 
-export type InsightRangeDays = 7 | 30;
+export type InsightRangeDays = 1 | 7 | 14 | 30 | "today" | "yesterday" | "this_month" | "last_month" | "custom";
 
 export type MediaFormatFilter =
   | "ALL"
@@ -22,6 +22,27 @@ export type MediaFormatFilter =
   | "VIDEO"
   | "REEL"
   | "CAROUSEL_ALBUM";
+
+export type AutoScheduleFrequency = "daily" | "weekly" | "monthly";
+
+export interface AutoScheduleSettings {
+  enabled: boolean;
+  frequency: AutoScheduleFrequency;
+  time: string;
+  timezone: string;
+}
+
+export interface NotionDatabaseReference {
+  id: string;
+  title: string;
+  parentPageId?: string | null;
+}
+
+export interface NotionPageReference {
+  id: string;
+  title: string;
+  databases?: NotionDatabaseReference[];
+}
 
 export interface GraphInsightsQuery {
   igAccountId: string;
@@ -124,22 +145,83 @@ export interface MarketingInsightReport {
   generatedAt: string;
 }
 
+// ============================================================================
+// NORMALIZED INTEGRATION TYPES
+// ============================================================================
+
+export interface NotionIntegration {
+  id: string;
+  userId: string;
+  workspaceId?: string | null;
+  workspaceName?: string | null;
+  accessToken?: string | null;
+  targetPageIds?: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FacebookIntegration {
+  id: string;
+  userId: string;
+  providerUserId?: string | null;
+  accessToken?: string | null;
+  tokenExpiresAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AutoScheduleConfig {
+  id: string;
+  userId: string;
+  enabled: boolean;
+  frequency: AutoScheduleFrequency;
+  time: string;
+  timezone: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * @deprecated Use NotionIntegration, FacebookIntegration, AutoScheduleConfig separately
+ * Keeping for backwards compatibility during migration
+ */
 export interface IntegrationRecord {
-  sessionId: string;
+  userId: string;
   notionWorkspaceId?: string | null;
   notionWorkspaceName?: string | null;
   notionAccessToken?: string | null;
   notionTargetPageId?: string | null;
-  facebookUserId?: string | null;
+  notionTargetPageIds?: string[] | null;
+  facebookProviderUserId?: string | null;
   facebookAccessToken?: string | null;
   facebookTokenExpiresAt?: string | null;
+  autoScheduleEnabled?: boolean | null;
+  autoScheduleFrequency?: AutoScheduleFrequency | null;
+  autoScheduleTime?: string | null;
+  autoScheduleTimezone?: string | null;
 }
 
 export interface SaveInsightPayload {
   sourceAccount: string;
-  report: MarketingInsightReport;
+  report?: MarketingInsightReport;
+  mediaReport?: {
+    query?: {
+      endpoint: string;
+      fields: string[];
+      limit?: number;
+      urlPreview?: string;
+    };
+    invalidAccounts?: string[];
+    accounts: Array<{
+      accountId?: string;
+      accountHandle: string;
+      items: Array<Record<string, unknown>>;
+    }>;
+    generatedAt: string;
+  };
   saveToNotion: boolean;
-  notionPageId?: string;
+  notionPageIds?: string[];
+  notionDatabaseByPageId?: Record<string, string>;
 }
 
 export interface SaveInsightResult {
@@ -150,7 +232,7 @@ export interface SaveInsightResult {
 }
 
 export interface N8nExportInput {
-  pageId: string;
+  pageIds: string[];
   graphUrl: string;
   metrics: string[];
   period: InsightPeriod;
@@ -158,4 +240,5 @@ export interface N8nExportInput {
   timeframe?: InsightTimeframe;
   breakdown?: InsightBreakdown;
   rangeDays: InsightRangeDays;
+  autoSchedule?: AutoScheduleSettings;
 }

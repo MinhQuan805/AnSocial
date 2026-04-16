@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { services } from "@/lib/services/factory";
+import { withAuth } from "@/lib/services/auth-middleware";
+import { getServices } from "@/lib/services/factory";
 import { fail } from "@/lib/utils/response";
 import { exportN8nSchema } from "@/lib/validators/input";
 
-export async function POST(request: NextRequest) {
+async function handler(request: NextRequest, _userId: string) {
   try {
+    const services = getServices();
     const body = await request.json();
     const payload = exportN8nSchema.parse(body);
 
@@ -23,3 +25,6 @@ export async function POST(request: NextRequest) {
     return fail(error);
   }
 }
+
+const services = getServices();
+export const POST = withAuth(handler, services.authMiddleware);

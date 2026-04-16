@@ -1,309 +1,336 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 import {
-  Camera,
-  CheckCircle2,
-  ChevronDown,
-  CircleAlert,
-  Database,
-  Download,
-  ExternalLink,
   Info,
   LoaderCircle,
-  Lock,
-  Play,
-  Plus,
-  Plug,
-  X,
 } from "lucide-react";
 
-import { Alert } from "@/components/ui/alert";
+import {
+  BREAKDOWN_LABELS,
+  DATE_RANGE_OPTIONS,
+  DEFAULT_INSIGHT_METRICS,
+  ENDPOINT_OPTIONS,
+  GRAPH_BASE_URL,
+  ID_TYPE_OPTIONS,
+  INSIGHT_ALLOWED_PARAM_KEYS,
+  MEDIA_ALLOWED_PARAM_KEYS,
+  MEDIA_BREAKDOWN_LABELS,
+  METRIC_OPTIONS,
+  TIMEFRAME_OPTIONS,
+  getFieldGroupsFromEndpoint,
+  getMetricGroupsFromEndpoint,
+} from "@/components/app/console/constants";
+import { MultiSelectDropdownField } from "@/components/app/console/forms/multi-select-dropdown-field";
+import {
+  SingleSelectDropdownField,
+  type SingleSelectDropdownOption,
+} from "@/components/app/console/forms/single-select-dropdown-field";
+import { OutputCard } from "@/components/app/console/output/output-card";
+import { ConsoleSidebar } from "@/components/app/console/sidebar/console-sidebar";
+import { TutorialDialog } from "@/components/app/console/tutorial/tutorial-dialog";
+import { InstagramBuilderCard } from "@/components/app/console/cards/builder/instagram-builder-card";
+import { HttpRequestCard } from "@/components/app/console/cards/http-request/http-request-card";
+import type {
+  EndpointKey,
+  HttpRequestReport,
+  InsightReport,
+  MediaReport,
+  RequestParameterRow,
+  SessionView,
+} from "@/components/app/console/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import type { InsightBreakdown, InsightTimeframe } from "@/lib/core/domain";
+import type {
+  InsightBreakdown,
+  InsightPeriod,
+  InsightRangeDays,
+  InsightTimeframe,
+} from "@/lib/core/domain";
 import {
   ACCOUNT_MEDIA_FIELD_OPTIONS,
   DEFAULT_ACCOUNT_MEDIA_FIELDS,
 } from "@/lib/insights/media-fields";
-import { INSIGHT_METRIC_OPTIONS, resolveInsightRequest } from "@/lib/insights/metric-rules";
-import { buildGraphApiUrl, buildGraphMediaApiUrl } from "@/lib/utils/api-url";
-
-type SessionView = {
-  notionWorkspaceName: string | null;
-  notionTargetPageId: string | null;
-  facebookConnected: boolean;
-  remainingFreeSaves: number;
-  accounts: Array<{ id: string; username: string }>;
-};
-
-type InsightReport = {
-  query: {
-    requestedMetrics: string[];
-    period: "day" | "lifetime";
-    rangeDays: 7 | 30;
-    metrics: string[];
-    metricType: "total_value" | "time_series";
-    timeframe?: "this_week" | "this_month";
-    breakdown?: InsightBreakdown;
-    warnings: string[];
-    mediaFormat: "ALL" | "IMAGE" | "VIDEO" | "REEL" | "CAROUSEL_ALBUM";
-    urlPreview: string;
-  };
-  invalidAccounts: string[];
-  generatedAt: string;
-  accounts: Array<{
-    accountId: string;
-    accountHandle: string;
-    engagementRate: number;
-    reach: Array<{ endTime: string; value: number }>;
-    impressions: Array<{ endTime: string; value: number }>;
-    accountsEngaged: Array<{ endTime: string; value: number }>;
-    profileViews: Array<{ endTime: string; value: number }>;
-    metricResults: Array<{
-      metric: string;
-      period: string;
-      totalValue: number;
-      points: Array<{ endTime: string; value: number }>;
-      breakdowns: Array<{
-        metric: string;
-        dimensionKeys: string[];
-        dimensionValues: string[];
-        value: number;
-        endTime?: string;
-      }>;
-    }>;
-    recommendations: Array<{ title: string; summary: string; confidence: string }>;
-  }>;
-};
-
-type MediaReport = {
-  query: {
-    endpoint: "account_media" | "tagged_media";
-    fields: string[];
-    limit: number;
-    urlPreview: string;
-  };
-  invalidAccounts: string[];
-  accounts: Array<{
-    accountId: string;
-    accountHandle: string;
-    items: Array<Record<string, unknown>>;
-  }>;
-  generatedAt: string;
-};
+import {
+  type EndpointDefinition,
+  type EndpointId,
+  type IdType,
+  getEdgeOptionsForIdType,
+  getEndpointById,
+  getFieldsForMediaType,
+  getMetricsForMediaType,
+  validateInsightSelection,
+} from "@/lib/insights/endpoint-registry";
+import { resolveInsightRequest } from "@/lib/insights/metric-rules";
+import { buildGraphApiUrl, buildGraphMediaApiUrl, buildGraphMediaIdApiUrl } from "@/lib/utils/api-url";
+import { cn } from "@/lib/utils/cn";
+import { fetchWithAuth } from "@/lib/utils/use-auth-headers";
+import { unixRangeFromDays } from "@/lib/utils/query";
 
 interface ConsoleAppProps {
   session: SessionView;
 }
 
-type EndpointKey = "account_insights" | "account_media" | "tagged_media";
+function uniqueOrdered(items: string[]): string[] {
+  const seen = new Set<string>();
+  const output: string[] = [];
 
-const ENDPOINT_OPTIONS: Array<{ key: EndpointKey; label: string; path: string }> = [
-  { key: "account_insights", label: "Account Insights", path: "/{ig_account_id}/insights" },
-  { key: "account_media", label: "Account Media", path: "/{ig_account_id}/media" },
-  { key: "tagged_media", label: "Tagged Media", path: "/{ig_account_id}/tags" },
-];
+  for (const item of items) {
+    if (!item || seen.has(item)) {
+      continue;
+    }
 
-const METRIC_GROUPS = Object.entries(
-  INSIGHT_METRIC_OPTIONS.reduce<Record<string, typeof INSIGHT_METRIC_OPTIONS>>((acc, item) => {
-    const groupItems = acc[item.uiGroup] ?? [];
-    acc[item.uiGroup] = [...groupItems, item];
-    return acc;
-  }, {}),
-).map(([title, options]) => ({ title, options }));
+    seen.add(item);
+    output.push(item);
+  }
 
-const METRIC_OPTIONS = INSIGHT_METRIC_OPTIONS;
+  return output;
+}
 
-const MEDIA_FIELD_GROUPS = Object.entries(
-  ACCOUNT_MEDIA_FIELD_OPTIONS.reduce<Record<string, typeof ACCOUNT_MEDIA_FIELD_OPTIONS>>(
-    (acc, item) => {
-      const groupItems = acc[item.uiGroup] ?? [];
-      acc[item.uiGroup] = [...groupItems, item];
-      return acc;
-    },
-    {},
-  ),
-).map(([title, options]) => ({ title, options }));
+function parseCsvValues(raw: string, allowedValues: Set<string>): string[] {
+  const cleaned = raw
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
 
-const BREAKDOWN_LABELS: Record<InsightBreakdown, string> = {
-  contact_button_type: "Contact Button Type",
-  follow_type: "Follow Type",
-  follower_type: "Follower Type",
-  media_product_type: "Media Product Type",
-  age: "Age",
-  city: "City",
-  country: "Country",
-  gender: "Gender",
-};
+  return uniqueOrdered(cleaned).filter((item) => allowedValues.has(item));
+}
 
-const TIMEFRAME_OPTIONS: Array<{ label: string; value: InsightTimeframe }> = [
-  { label: "This week (7 days)", value: "this_week" },
-  { label: "This month (30 days)", value: "this_month" },
-];
+function sanitizeSingleUrlInput(raw: string): string {
+  const compact = raw.replace(/\r?\n/g, " ").trim();
+  const [firstToken] = compact.split(/\s+/);
+  return firstToken ?? "";
+}
 
-const DATE_RANGE_OPTIONS: Array<{ label: string; value: 7 | 30 }> = [
-  { label: "Last 7 days", value: 7 },
-  { label: "Last 30 days", value: 30 },
-];
+function normalizeGraphUrl(raw: string, fallback: string): URL {
+  const fallbackUrl = new URL(fallback);
+  const singleLine = sanitizeSingleUrlInput(raw);
+
+  let parsed: URL;
+  try {
+    parsed = new URL(singleLine);
+  } catch {
+    parsed = fallbackUrl;
+  }
+
+  const normalized = new URL(GRAPH_BASE_URL);
+  const fallbackPath = fallbackUrl.pathname.replace(/^\/v\d+\.\d+\/?/i, "/");
+  const nextPath = parsed.pathname.replace(/^\/v\d+\.\d+\/?/i, "/");
+
+  normalized.pathname = nextPath === "/" || nextPath.length === 0 ? fallbackPath : nextPath;
+  normalized.search = parsed.search;
+  return normalized;
+}
+
+function getFirstQueryValue(params: URLSearchParams, key: string): string | undefined {
+  const values = params.getAll(key);
+  if (values.length === 0) {
+    return undefined;
+  }
+
+  const [first] = values;
+  return first?.trim() ? first.trim() : undefined;
+}
+
+function isValidDate(date: Date | undefined): date is Date {
+  return Boolean(date && !Number.isNaN(date.getTime()));
+}
+
+function parseUnixDate(raw: string | undefined): Date | undefined {
+  if (!raw) {
+    return undefined;
+  }
+
+  const unix = Number(raw);
+  if (!Number.isFinite(unix) || unix <= 0) {
+    return undefined;
+  }
+
+  const parsed = new Date(unix * 1000);
+  return isValidDate(parsed) ? parsed : undefined;
+}
+
+function validateCustomDateRange(startDate: Date | undefined, endDate: Date | undefined): string | null {
+  if (!startDate || !endDate) {
+    return "Both start and end dates are required";
+  }
+
+  if (startDate > endDate) {
+    return "Start date must be before end date";
+  }
+
+  const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 30) {
+    return `Date range must be 30 days or less (current: ${diffDays} days)`;
+  }
+
+  return null;
+}
+
+function parseRangeDays(raw: string): InsightRangeDays {
+  if (raw === "today" || raw === "yesterday" || raw === "this_month" || raw === "last_month" || raw === "custom") {
+    return raw;
+  }
+
+  const parsed = Number(raw);
+  if (parsed === 1 || parsed === 7 || parsed === 14 || parsed === 30) {
+    return parsed;
+  }
+
+  return 7;
+}
+
+const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+type HttpMethod = (typeof HTTP_METHODS)[number];
+const METHOD_OPTIONS: SingleSelectDropdownOption[] = HTTP_METHODS.map((method) => ({
+  value: method,
+  label: method,
+}));
+const NO_BREAKDOWN_VALUE = "__none__";
 
 export function ConsoleApp({ session }: ConsoleAppProps) {
-  const [endpoint, setEndpoint] = useState<EndpointKey>("account_insights");
+  // ── New two-level endpoint selection ──
+  const [selectedIdType, setSelectedIdType] = useState<IdType>("ig_user_id");
+  const [selectedEndpointId, setSelectedEndpointId] = useState<EndpointId>("ig_user_id/insights");
+
+  // Legacy endpoint key — derived from new selection for API route compat
+  const endpoint: EndpointKey = useMemo(() => {
+    if (selectedEndpointId === "ig_user_id/insights") return "account_insights";
+    if (selectedEndpointId === "ig_user_id/media") return "account_media";
+    if (selectedEndpointId === "ig_user_id/tags") return "tagged_media";
+    return "account_media"; // fallback for non-legacy endpoints
+  }, [selectedEndpointId]);
+
+  const activeEndpoint = useMemo<EndpointDefinition | undefined>(
+    () => getEndpointById(selectedEndpointId),
+    [selectedEndpointId],
+  );
+
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(
     session.accounts[0]?.id ? [session.accounts[0].id] : [],
   );
-  const [accountInputText, setAccountInputText] = useState("");
-  const [metrics, setMetrics] = useState<string[]>(["reach", "accounts_engaged"]);
+  const [metrics, setMetrics] = useState<string[]>(DEFAULT_INSIGHT_METRICS);
   const [mediaFields, setMediaFields] = useState<string[]>(DEFAULT_ACCOUNT_MEDIA_FIELDS);
   const [mediaLimit, setMediaLimit] = useState(25);
-  const [period, setPeriod] = useState<"day" | "week" | "month">("day");
-  const [rangeDays, setRangeDays] = useState<7 | 30>(7);
+  const [period, setPeriod] = useState<InsightPeriod>("day");
+  const [rangeDays, setRangeDays] = useState<InsightRangeDays>(7);
+  const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+  const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+  const [customDateError, setCustomDateError] = useState<string | null>(null);
+  const [startDatePopoverOpen, setStartDatePopoverOpen] = useState(false);
+  const [endDatePopoverOpen, setEndDatePopoverOpen] = useState(false);
   const [timeframe, setTimeframe] = useState<InsightTimeframe>("this_week");
   const [breakdown, setBreakdown] = useState<InsightBreakdown | "">("");
   const mediaFormat: "ALL" | "IMAGE" | "VIDEO" | "REEL" | "CAROUSEL_ALBUM" = "ALL";
-  const [metricsMenuOpen, setMetricsMenuOpen] = useState(false);
-  const [fieldsMenuOpen, setFieldsMenuOpen] = useState(false);
-  const [notionPageId, setNotionPageId] = useState(session.notionTargetPageId ?? "");
-  const [saveToNotion, setSaveToNotion] = useState(true);
 
-  const [insightReport, setInsightReport] = useState<InsightReport | null>(null);
-  const [mediaReport, setMediaReport] = useState<MediaReport | null>(null);
+  const [availableNotionPages, setAvailableNotionPages] = useState(session.notionPages);
+  const [availableNotionDatabases, setAvailableNotionDatabases] = useState(session.notionDatabases);
+
+  const [notionPageIds, setNotionPageIds] = useState<string[]>(
+    session.notionTargetPageIds.length > 0
+      ? session.notionTargetPageIds
+      : session.notionPages[0]
+        ? [session.notionPages[0].id]
+        : [],
+  );
+  const [notionTableByPage, setNotionTableByPage] = useState<Record<string, string>>({});
+  const [saveToNotion, setSaveToNotion] = useState(false);
+  const [autoSchedule, setAutoSchedule] = useState(session.autoSchedule);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
+
+  const [queryTab, setQueryTab] = useState<"parameters" | "headers" | "body" | "authorization">(
+    "parameters",
+  );
+  const [requestMethod, setRequestMethod] = useState<HttpMethod>("GET");
+  const [bodyMode, setBodyMode] = useState<"json" | "form-data" | "x-www-form-urlencoded">("json");
+  const [authMode, setAuthMode] = useState<"oauth" | "token" | "basic">("oauth");
+  const [editableUrl, setEditableUrl] = useState("");
+  const [requestBody, setRequestBody] = useState("");
+  const [urlInputDirty, setUrlInputDirty] = useState(false);
+  const [parameterDrafts, setParameterDrafts] = useState<Record<string, string>>({});
+  const [newParamKey, setNewParamKey] = useState("");
+  const [newParamValue, setNewParamValue] = useState("");
+  const [customHeaders, setCustomHeaders] = useState<Array<{ key: string; value: string }>>([]);
+  const [newHeaderKey, setNewHeaderKey] = useState("");
+  const [newHeaderValue, setNewHeaderValue] = useState("");
+
+  const [bearerToken, setBearerToken] = useState("");
+  const [loggingOut, setLoggingOut] = useState(false);
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [scheduleSaving, setScheduleSaving] = useState(false);
+
+  const [insightReport, setInsightReport] = useState<InsightReport | null>(null);
+  const [mediaReport, setMediaReport] = useState<MediaReport | null>(null);
+  const [httpReport, setHttpReport] = useState<HttpRequestReport | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const metricsMenuRef = useRef<HTMLDivElement | null>(null);
-  const metricsMenuPanelRef = useRef<HTMLDivElement | null>(null);
-  const metricsButtonRef = useRef<HTMLButtonElement | null>(null);
-  const fieldsMenuRef = useRef<HTMLDivElement | null>(null);
-  const fieldsMenuPanelRef = useRef<HTMLDivElement | null>(null);
-  const fieldsButtonRef = useRef<HTMLButtonElement | null>(null);
-  const [metricsMenuPosition, setMetricsMenuPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  }>({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
-  const [fieldsMenuPosition, setFieldsMenuPosition] = useState<{
-    top: number;
-    left: number;
-    width: number;
-  }>({
-    top: 0,
-    left: 0,
-    width: 0,
-  });
+  // ── Media picker state for ig_media_id ──
+  const [selectedMediaId, setSelectedMediaId] = useState<string>("");
+  const [accountMediaList, setAccountMediaList] = useState<
+    Array<{ id: string; media_type: string; media_product_type?: string; permalink?: string; caption?: string; timestamp?: string }>
+  >([]);
+  const [loadingMedia, setLoadingMedia] = useState(false);
 
-  const isInsightEndpoint = endpoint === "account_insights";
-  const isMediaEndpoint = endpoint === "account_media" || endpoint === "tagged_media";
+  // ── Media type filter ──
+  const [selectedMediaType, setSelectedMediaType] = useState<string>("ALL");
+
+  const isMediaIdType = selectedIdType === "ig_media_id";
+  const isInsightEndpoint = activeEndpoint?.type === "insights" || endpoint === "account_insights";
+  const isMediaEndpoint = activeEndpoint?.type === "fields" || endpoint === "account_media" || endpoint === "tagged_media";
+
+  const metricKeySet = useMemo(() => new Set(METRIC_OPTIONS.map((item) => item.key)), []);
+  const mediaFieldKeySet = useMemo(
+    () => new Set(ACCOUNT_MEDIA_FIELD_OPTIONS.map((item) => item.key)),
+    [],
+  );
+  const timeframeValueSet = useMemo(() => new Set(TIMEFRAME_OPTIONS.map((item) => item.value)), []);
+  const breakdownValueSet = useMemo(() => new Set(Object.keys(BREAKDOWN_LABELS)), []);
+
+  const activeAccountId = selectedAccountIds[0] ?? session.accounts[0]?.id ?? "";
+  const hasOAuthConnection = session.facebookConnected && session.accounts.length > 0;
+  const isOAuthMode = authMode === "oauth" && hasOAuthConnection;
+  const isHttpRequestMode = !isOAuthMode;
+
+  // Keep sessionStorage fallback aligned with server session for ngrok/cookie edge cases.
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const serverSessionId = session.sessionId?.trim();
+    if (!serverSessionId) {
+      return;
+    }
+
+    const currentSessionId = sessionStorage.getItem("ana_session_id");
+    if (currentSessionId !== serverSessionId) {
+      sessionStorage.setItem("ana_session_id", serverSessionId);
+    }
+  }, [session.sessionId]);
 
   useEffect(() => {
-    const onClickOutside = (event: MouseEvent) => {
-      const target = event.target as Node;
-      const clickedMetricsTrigger = metricsMenuRef.current?.contains(target);
-      const clickedMetricsPanel = metricsMenuPanelRef.current?.contains(target);
-      const clickedFieldsTrigger = fieldsMenuRef.current?.contains(target);
-      const clickedFieldsPanel = fieldsMenuPanelRef.current?.contains(target);
-
-      if (!clickedMetricsTrigger && !clickedMetricsPanel) {
-        setMetricsMenuOpen(false);
-      }
-
-      if (!clickedFieldsTrigger && !clickedFieldsPanel) {
-        setFieldsMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", onClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", onClickOutside);
-    };
-  }, []);
+    if (!hasOAuthConnection && authMode === "oauth") {
+      setAuthMode("token");
+    }
+  }, [authMode, hasOAuthConnection]);
 
   useEffect(() => {
-    if (!metricsMenuOpen) return;
-
-    const updatePosition = () => {
-      const rect = metricsButtonRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      setMetricsMenuPosition({
-        top: rect.bottom + 6,
-        left: rect.left,
-        width: rect.width,
-      });
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [metricsMenuOpen]);
-
-  useEffect(() => {
-    if (!fieldsMenuOpen) return;
-
-    const updatePosition = () => {
-      const rect = fieldsButtonRef.current?.getBoundingClientRect();
-      if (!rect) return;
-
-      setFieldsMenuPosition({
-        top: rect.bottom + 6,
-        left: rect.left,
-        width: rect.width,
-      });
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-    window.addEventListener("scroll", updatePosition, true);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-    };
-  }, [fieldsMenuOpen]);
-
-  const accountInputs = useMemo(
-    () => accountInputText.split("\n").map((item) => item.trim()).filter(Boolean),
-    [accountInputText],
-  );
-
-  const activeAccountId = selectedAccountIds[0] ?? "";
-
-  const selectedMetricOptions = useMemo(
-    () => METRIC_OPTIONS.filter((item) => metrics.includes(item.key)),
-    [metrics],
-  );
-
-  const selectedMediaFieldOptions = useMemo(
-    () => ACCOUNT_MEDIA_FIELD_OPTIONS.filter((item) => mediaFields.includes(item.key)),
-    [mediaFields],
-  );
+    if (isOAuthMode && requestMethod !== "GET") {
+      setRequestMethod("GET");
+    }
+  }, [isOAuthMode, requestMethod]);
 
   const resolvedSelection = useMemo(
     () =>
@@ -325,298 +352,244 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     [resolvedSelection.warnings],
   );
 
-  const selectionWarning = compatibilityWarning ?? resolvedSelection.warnings[0] ?? null;
+  const selectionWarning = useMemo(() => {
+    return compatibilityWarning ?? resolvedSelection.warnings.filter(w => !w.toLowerCase().includes("period"))[0] ?? null;
+  }, [compatibilityWarning, resolvedSelection.warnings]);
 
-  useEffect(() => {
-    if (breakdown && !resolvedSelection.allowedBreakdowns.includes(breakdown)) {
-      setBreakdown("");
-    }
-  }, [breakdown, resolvedSelection.allowedBreakdowns]);
 
-  const selectedEndpointPath = useMemo(
-    () => ENDPOINT_OPTIONS.find((item) => item.key === endpoint)?.path ?? "",
-    [endpoint],
+  const endpointDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () => ENDPOINT_OPTIONS.map((option) => ({ value: option.key, label: option.label })),
+    [],
   );
 
-  const requestParameterRows = useMemo(
+  // ── New two-level dropdown options ──
+  const idTypeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () =>
+      ID_TYPE_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+        description: opt.description,
+      })),
+    [],
+  );
+
+  const edgeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () =>
+      getEdgeOptionsForIdType(selectedIdType).map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+        description: opt.description,
+      })),
+    [selectedIdType],
+  );
+
+  // Registry validation for the active endpoint
+  const registryValidation = useMemo(() => {
+    if (!activeEndpoint || activeEndpoint.type !== "insights") return null;
+    return validateInsightSelection(
+      activeEndpoint,
+      metrics,
+      period,
+      timeframe,
+      breakdown || undefined,
+    );
+  }, [activeEndpoint, metrics, period, timeframe, breakdown]);
+
+  // Dynamic metric/field options from active endpoint (filtered by media type)
+  const activeMetricOptions = useMemo(() => {
+    if (!activeEndpoint?.metrics) return [];
+    const filtered = getMetricsForMediaType(activeEndpoint.metrics, selectedMediaType);
+    return filtered.map((m) => ({
+      key: m.key,
+      label: m.label,
+      description: m.description,
+      uiGroup: m.group,
+    }));
+  }, [activeEndpoint, selectedMediaType]);
+
+  const activeFieldOptions = useMemo(() => {
+    if (!activeEndpoint?.fields) return [];
+    const filtered = getFieldsForMediaType(activeEndpoint.fields, selectedMediaType);
+    return filtered.map((f) => ({
+      key: f.key,
+      label: f.label,
+      description: f.description,
+      uiGroup: f.group,
+    }));
+  }, [activeEndpoint, selectedMediaType]);
+
+  // Validation warnings/errors from registry
+  const registryWarnings = useMemo(() => {
+    if (!registryValidation) return [];
+    return [...registryValidation.errors, ...registryValidation.warnings];
+  }, [registryValidation]);
+
+
+  const accountDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () =>
+      session.accounts.map((account) => ({
+        value: account.id,
+        label: account.username,
+        description: account.id,
+      })),
+    [session.accounts],
+  );
+
+  const periodDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () => [
+      { value: "day", label: "Daily" },
+      { value: "week", label: "Weekly" },
+      { value: "month", label: "Monthly" },
+    ],
+    [],
+  );
+
+  const timeframeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () => TIMEFRAME_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
+    [],
+  );
+
+  const dateRangeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () => DATE_RANGE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label })),
+    [],
+  );
+
+  const breakdownDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
+    () => [
+      { value: NO_BREAKDOWN_VALUE, label: "No breakdown" },
+      ...resolvedSelection.allowedBreakdowns.map((item) => ({
+        value: item,
+        label: BREAKDOWN_LABELS[item],
+      })),
+    ],
+    [resolvedSelection.allowedBreakdowns],
+  );
+
+  const integrationSession = useMemo(
+    () => ({
+      ...session,
+      notionPages: availableNotionPages,
+      notionDatabases: availableNotionDatabases,
+    }),
+    [availableNotionDatabases, availableNotionPages, session],
+  );
+
+  const exportTargetIds = useMemo(
+    () =>
+      uniqueOrdered(
+        notionPageIds
+          .map((pageId) => notionTableByPage[pageId]?.trim() || pageId)
+          .filter((targetId) => targetId.trim().length > 0),
+      ),
+    [notionPageIds, notionTableByPage],
+  );
+
+  const requestParameterRows = useMemo<Array<RequestParameterRow>>(
     () => {
       if (isMediaEndpoint) {
         return [
-          { key: "fields", value: mediaFields.join(",") },
-          { key: "limit", value: String(mediaLimit) },
+          { key: "fields", value: mediaFields.join(","), required: true },
+          { key: "limit", value: String(mediaLimit), required: true },
         ];
       }
 
-      const rows = [
-        { key: "metric", value: resolvedSelection.effectiveMetrics.join(",") },
-        { key: "metric_type", value: resolvedSelection.metricType },
-        { key: "period", value: resolvedSelection.period },
+      const range = unixRangeFromDays(resolvedSelection.rangeDays, customStartDate, customEndDate);
+      const rows: RequestParameterRow[] = [
+        { key: "metric", value: resolvedSelection.effectiveMetrics.join(","), required: true },
+        { key: "metric_type", value: resolvedSelection.metricType, required: true },
+        { key: "period", value: resolvedSelection.period, required: true },
       ];
 
       if (resolvedSelection.timeframe) {
-        rows.push({ key: "timeframe", value: resolvedSelection.timeframe });
+        rows.push({ key: "timeframe", value: resolvedSelection.timeframe, required: false });
       }
 
       if (resolvedSelection.breakdown) {
-        rows.push({ key: "breakdown", value: resolvedSelection.breakdown });
+        rows.push({ key: "breakdown", value: resolvedSelection.breakdown, required: false });
+      }
+
+      if (resolvedSelection.period === "day") {
+        rows.push({ key: "since", value: String(range.sinceUnix), required: false });
+        rows.push({ key: "until", value: String(range.untilUnix), required: false });
       }
 
       return rows;
     },
-    [isMediaEndpoint, mediaFields, mediaLimit, resolvedSelection],
+    [
+      customEndDate,
+      customStartDate,
+      isMediaEndpoint,
+      mediaFields,
+      mediaLimit,
+      resolvedSelection,
+    ],
   );
 
-  const [apiUrlPreview, setApiUrlPreview] = useState("");
+  const apiUrlPreview = useMemo(() => {
+    const accountId = activeAccountId || "<ig_account_id>";
 
-  useEffect(() => {
-    const accountId = activeAccountId || session.accounts[0]?.id || accountInputs[0] || "<ig_account_id>";
-
-    if (isMediaEndpoint) {
-      setApiUrlPreview(
-        buildGraphMediaApiUrl({
-          accountId,
-          fields: mediaFields,
-          limit: mediaLimit,
-          endpoint,
-        }),
-      );
-      return;
+    // ── ig_media_id endpoints ──
+    if (isMediaIdType && activeEndpoint) {
+      const mediaId = selectedMediaId || "<ig_media_id>";
+      const edge = activeEndpoint.edge;
+      if (edge === "insights" && activeEndpoint.metrics) {
+        const effectiveMetrics = registryValidation?.effectiveMetrics ?? metrics;
+        return buildGraphMediaIdApiUrl({
+          mediaId,
+          edge: "insights",
+          metrics: effectiveMetrics,
+          metricType: registryValidation?.metricType ?? "total_value",
+          period: registryValidation?.resolvedPeriod ?? "lifetime",
+        });
+      }
+      return buildGraphMediaIdApiUrl({
+        mediaId,
+        edge,
+        fields: mediaFields,
+      });
     }
 
-    setApiUrlPreview(
-      buildGraphApiUrl({
+    // ── ig_user_id media/tags endpoints ──
+    if (isMediaEndpoint && !isMediaIdType) {
+      const mediaEndpointType = endpoint === "tagged_media" ? "tagged_media" : "account_media";
+      return buildGraphMediaApiUrl({
         accountId,
-        metrics: resolvedSelection.effectiveMetrics,
-        period: resolvedSelection.period,
-        rangeDays: resolvedSelection.rangeDays,
-        timeframe: resolvedSelection.timeframe,
-        breakdown: resolvedSelection.breakdown,
-      }),
-    );
+        fields: mediaFields,
+        limit: mediaLimit,
+        endpoint: mediaEndpointType,
+      });
+    }
+
+    // ── ig_user_id/insights ──
+    return buildGraphApiUrl({
+      accountId,
+      metrics: resolvedSelection.effectiveMetrics,
+      period: resolvedSelection.period,
+      rangeDays: resolvedSelection.rangeDays,
+      timeframe: resolvedSelection.timeframe,
+      breakdown: resolvedSelection.breakdown,
+      customStartDate,
+      customEndDate,
+    });
   }, [
     activeAccountId,
-    accountInputs,
+    activeEndpoint,
+    customEndDate,
+    customStartDate,
     endpoint,
     isMediaEndpoint,
+    isMediaIdType,
     mediaFields,
     mediaLimit,
+    metrics,
+    registryValidation,
     resolvedSelection.breakdown,
     resolvedSelection.effectiveMetrics,
     resolvedSelection.period,
     resolvedSelection.rangeDays,
     resolvedSelection.timeframe,
-    session.accounts,
+    selectedMediaId,
   ]);
-
-  const toggleMetric = (metric: string) => {
-    setMetrics((prev) => {
-      if (prev.includes(metric)) {
-        if (prev.length === 1) {
-          return prev;
-        }
-        return prev.filter((item) => item !== metric);
-      }
-      return [...prev, metric];
-    });
-  };
-
-  const removeMetric = (metric: string) => {
-    setMetrics((prev) => {
-      if (!prev.includes(metric)) {
-        return prev;
-      }
-
-      if (prev.length === 1) {
-        return prev;
-      }
-
-      return prev.filter((item) => item !== metric);
-    });
-  };
-
-  const toggleMediaField = (field: string) => {
-    setMediaFields((prev) => {
-      if (prev.includes(field)) {
-        if (prev.length === 1) {
-          return prev;
-        }
-
-        return prev.filter((item) => item !== field);
-      }
-
-      return [...prev, field];
-    });
-  };
-
-  const removeMediaField = (field: string) => {
-    setMediaFields((prev) => {
-      if (!prev.includes(field)) {
-        return prev;
-      }
-
-      if (prev.length === 1) {
-        return prev;
-      }
-
-      return prev.filter((item) => item !== field);
-    });
-  };
-
-  const runAnalysis = async () => {
-    setRunning(true);
-    setError(null);
-    setStatus(null);
-
-    try {
-      const selectedIds = activeAccountId ? [activeAccountId] : selectedAccountIds;
-      const response = await fetch(isInsightEndpoint ? "/api/insights" : "/api/media", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          isInsightEndpoint
-            ? {
-                accountInputs,
-                selectedAccountIds: selectedIds,
-                metrics,
-                period,
-                rangeDays,
-                timeframe,
-                breakdown: breakdown || undefined,
-                mediaFormat,
-              }
-            : {
-                accountInputs,
-                selectedAccountIds: selectedIds,
-                endpoint,
-                fields: mediaFields,
-                limit: mediaLimit,
-              },
-        ),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(
-          payload?.error?.message ??
-            (isInsightEndpoint ? "Failed to fetch insight data." : "Failed to fetch media data."),
-        );
-      }
-
-      if (isInsightEndpoint) {
-        const nextReport = payload as InsightReport;
-        setInsightReport(nextReport);
-        setMediaReport(null);
-
-        if (nextReport.query.warnings.length > 0) {
-          setStatus(`Insight data fetched with warnings: ${nextReport.query.warnings[0]}`);
-        } else {
-          setStatus("Insight data fetched successfully.");
-        }
-      } else {
-        const nextReport = payload as MediaReport;
-        setMediaReport(nextReport);
-        setInsightReport(null);
-        setStatus("Account media data fetched successfully.");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error.");
-    } finally {
-      setRunning(false);
-    }
-  };
-
-  const saveResult = async () => {
-    if (!insightReport) {
-      setError("Save only supports Account Insight data.");
-      return;
-    }
-
-    setSaving(true);
-    setError(null);
-    setStatus(null);
-
-    try {
-      const response = await fetch("/api/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sourceAccount: insightReport.accounts[0]?.accountHandle ?? "unknown",
-          report: insightReport,
-          saveToNotion,
-          notionPageId,
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "Failed to save data.");
-      }
-
-      setStatus(
-        `Data saved. Remaining free saves: ${payload.remainingFreeSaves}.`,
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const exportN8n = async () => {
-    if (!insightReport) {
-      setError("Export n8n only supports Account Insight data.");
-      return;
-    }
-
-    if (!notionPageId.trim()) {
-      setError("Please enter Notion Page ID before exporting to n8n.");
-      return;
-    }
-
-    setExporting(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/n8n/export", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pageId: notionPageId.trim(),
-          graphUrl: insightReport.query.urlPreview,
-          metrics: insightReport.query.metrics,
-          period: insightReport.query.period,
-          rangeDays: insightReport.query.rangeDays,
-          metricType: insightReport.query.metricType,
-          timeframe: insightReport.query.timeframe,
-          breakdown: insightReport.query.breakdown,
-        }),
-      });
-
-      if (!response.ok) {
-        const payload = await response.json();
-        throw new Error(payload?.error?.message ?? "Failed to export n8n workflow.");
-      }
-
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = objectUrl;
-      anchor.download = `ana-social-workflow-${Date.now()}.json`;
-      anchor.click();
-      URL.revokeObjectURL(objectUrl);
-
-      setStatus("Exported n8n workflow JSON.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error.");
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const activeUrlPreview =
-    isInsightEndpoint
-      ? insightReport?.query.urlPreview ?? apiUrlPreview
-      : mediaReport?.query.urlPreview ?? apiUrlPreview;
 
   const mediaTableFields = useMemo(() => {
     const fields = mediaReport?.query.fields ?? mediaFields;
@@ -636,6 +609,972 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     [mediaReport?.accounts],
   );
 
+  useEffect(() => {
+    if (session.accounts.length === 0) {
+      setSelectedAccountIds([]);
+      return;
+    }
+
+    setSelectedAccountIds((previous) => {
+      const available = new Set(session.accounts.map((item) => item.id));
+      const valid = previous.filter((item) => available.has(item));
+      if (valid.length > 0) {
+        return [valid[0]];
+      }
+
+      return [session.accounts[0].id];
+    });
+  }, [session.accounts]);
+
+  // When IdType changes, reset edge to first available and reset metrics/fields
+  useEffect(() => {
+    const edges = getEdgeOptionsForIdType(selectedIdType);
+    if (edges.length > 0 && !edges.some((e) => e.value === selectedEndpointId)) {
+      setSelectedEndpointId(edges[0].value as EndpointId);
+    }
+  }, [selectedIdType, selectedEndpointId]);
+
+  // When endpoint changes, reset metrics & fields to defaults
+  useEffect(() => {
+    if (!activeEndpoint) return;
+    if (activeEndpoint.type === "insights" && activeEndpoint.defaultMetrics) {
+      setMetrics(activeEndpoint.defaultMetrics);
+    }
+    if (activeEndpoint.type === "fields" && activeEndpoint.defaultFields) {
+      setMediaFields(activeEndpoint.defaultFields);
+    }
+    // Reset media type filter when endpoint changes
+    setSelectedMediaType("ALL");
+  }, [activeEndpoint]);
+
+  // Fetch media list when ig_media_id is selected
+  useEffect(() => {
+    if (!isMediaIdType) {
+      setAccountMediaList([]);
+      setSelectedMediaId("");
+      return;
+    }
+
+    const accountId = activeAccountId;
+    if (!accountId || !session.facebookConnected) {
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingMedia(true);
+
+    fetchWithAuth("/api/media", {
+      method: "POST",
+      body: JSON.stringify({
+        accountInputs: [],
+        selectedAccountIds: [accountId],
+        endpoint: "account_media",
+        fields: ["id", "media_type", "media_product_type", "permalink", "caption", "timestamp"],
+        limit: 50,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        const items =
+          data?.accounts?.[0]?.items ??
+          [];
+        setAccountMediaList(
+          items.map((item: Record<string, unknown>) => ({
+            id: String(item.id ?? ""),
+            media_type: String(item.media_type ?? "UNKNOWN"),
+            media_product_type: item.media_product_type ? String(item.media_product_type) : undefined,
+            permalink: item.permalink ? String(item.permalink) : undefined,
+            caption: item.caption ? String(item.caption).slice(0, 80) : undefined,
+            timestamp: item.timestamp ? String(item.timestamp) : undefined,
+          })),
+        );
+        if (items.length > 0 && !selectedMediaId) {
+          setSelectedMediaId(String(items[0].id ?? ""));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAccountMediaList([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMedia(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isMediaIdType, activeAccountId, session.facebookConnected]);
+
+  const mediaPickerOptions = useMemo<SingleSelectDropdownOption[]>(() => {
+    if (accountMediaList.length === 0) return [];
+    return accountMediaList.map((item) => {
+      const typeLabel = item.media_type === "VIDEO" ? "🎬" : item.media_type === "IMAGE" ? "🖼️" : item.media_type === "CAROUSEL_ALBUM" ? "📸" : "📄";
+      const dateLabel = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : "";
+      return {
+        value: item.id,
+        label: `${typeLabel} ${item.id}`,
+        description: item.caption ? `${dateLabel} • ${item.caption}` : dateLabel,
+      };
+    });
+  }, [accountMediaList]);
+
+  // Auto-detect media_product_type from selected media
+  useEffect(() => {
+    if (!selectedMediaId || accountMediaList.length === 0) return;
+    const media = accountMediaList.find((m) => m.id === selectedMediaId);
+    if (media?.media_product_type) {
+      setSelectedMediaType(media.media_product_type);
+    }
+  }, [selectedMediaId, accountMediaList]);
+
+  // Auto-sync period to first allowed value when registry validation changes
+  useEffect(() => {
+    if (!registryValidation) return;
+    const { allowedPeriods } = registryValidation;
+    if (allowedPeriods.length > 0 && !allowedPeriods.includes(period)) {
+      setPeriod(allowedPeriods[0] as InsightPeriod);
+    }
+  }, [registryValidation, period]);
+
+  useEffect(() => {
+    if (breakdown && !resolvedSelection.allowedBreakdowns.includes(breakdown)) {
+      setBreakdown("");
+    }
+  }, [breakdown, resolvedSelection.allowedBreakdowns]);
+
+  useEffect(() => {
+    if (rangeDays !== "custom") {
+      setCustomStartDate(undefined);
+      setCustomEndDate(undefined);
+      setCustomDateError(null);
+    }
+  }, [rangeDays]);
+
+  useEffect(() => {
+    if (isHttpRequestMode) {
+      if (!editableUrl.trim()) {
+        setEditableUrl(apiUrlPreview);
+      }
+      return;
+    }
+
+    if (urlInputDirty) {
+      return;
+    }
+
+    setEditableUrl(apiUrlPreview);
+  }, [apiUrlPreview, editableUrl, isHttpRequestMode, urlInputDirty]);
+
+  useEffect(() => {
+    if (availableNotionPages.length === 0) {
+      setNotionPageIds([]);
+      return;
+    }
+
+    setNotionPageIds((previous) => {
+      const availableIds = new Set(availableNotionPages.map((page) => page.id));
+      const valid = previous.filter((item) => availableIds.has(item));
+      if (valid.length > 0) {
+        return valid;
+      }
+
+      return [availableNotionPages[0].id];
+    });
+  }, [availableNotionPages]);
+
+  useEffect(() => {
+    setNotionTableByPage((previous) => {
+      const selected = new Set(notionPageIds);
+      const nextEntries = Object.entries(previous).filter(
+        ([pageId, databaseId]) => selected.has(pageId) && databaseId.trim().length > 0,
+      );
+
+      if (nextEntries.length === Object.keys(previous).length) {
+        return previous;
+      }
+
+      return Object.fromEntries(nextEntries);
+    });
+  }, [notionPageIds]);
+
+  // Set initial value to "Create Default Table" for all selected pages
+  useEffect(() => {
+    const initialTableByPage: Record<string, string> = {};
+    for (const pageId of notionPageIds) {
+      initialTableByPage[pageId] = `__create_default_${pageId}__`;
+    }
+    setNotionTableByPage(initialTableByPage);
+  }, [notionPageIds]);
+
+  // Extract field names from output report
+  const getOutputFields = (): string[] => {
+    if (mediaReport?.query.fields) {
+      // For media endpoints, use the actual fields returned
+      return mediaReport.query.fields;
+    }
+
+    if (insightReport) {
+      const metricsFromQuery = insightReport.query.metrics;
+      const metricsFromResults = insightReport.accounts.flatMap((account) =>
+        account.metricResults.map((metricResult) => metricResult.metric),
+      );
+      const metrics = Array.from(new Set([...metricsFromQuery, ...metricsFromResults]));
+
+      return ["generatedAt", "endTime", "metric", "period", "totalValue", ...metrics];
+    }
+
+    return [];
+  };
+
+  const resetRequiredParameter = (key: string) => {
+    if (isMediaEndpoint) {
+      if (key === "fields") {
+        setMediaFields(DEFAULT_ACCOUNT_MEDIA_FIELDS);
+      }
+
+      if (key === "limit") {
+        setMediaLimit(25);
+      }
+
+      return;
+    }
+
+    switch (key) {
+      case "metric":
+        setMetrics(DEFAULT_INSIGHT_METRICS);
+        break;
+      case "metric_type":
+        setStatus("metric_type is generated automatically from metrics and cannot be removed.");
+        break;
+      case "period":
+        setPeriod("day");
+        break;
+      default:
+        break;
+    }
+  };
+
+  const applyParameter = (rawKey: string, rawValue: string) => {
+    const key = rawKey.trim().toLowerCase();
+    const value = rawValue.trim();
+
+    if (isMediaEndpoint) {
+      if (!MEDIA_ALLOWED_PARAM_KEYS.has(key)) {
+        setStatus(`Unsupported parameter "${key}" was removed.`);
+        return;
+      }
+
+      if (key === "fields") {
+        const nextFields = parseCsvValues(value, mediaFieldKeySet);
+        setMediaFields(nextFields.length > 0 ? nextFields : DEFAULT_ACCOUNT_MEDIA_FIELDS);
+        return;
+      }
+
+      if (key === "limit") {
+        const parsedLimit = Number(value);
+        if (!Number.isFinite(parsedLimit)) {
+          setMediaLimit(25);
+          return;
+        }
+
+        setMediaLimit(Math.min(100, Math.max(1, Math.round(parsedLimit))));
+      }
+
+      return;
+    }
+
+    if (!INSIGHT_ALLOWED_PARAM_KEYS.has(key)) {
+      setStatus(`Unsupported parameter "${key}" was removed.`);
+      return;
+    }
+
+    if (key === "metric") {
+      const nextMetrics = parseCsvValues(value, metricKeySet);
+      setMetrics(nextMetrics.length > 0 ? nextMetrics : DEFAULT_INSIGHT_METRICS);
+      return;
+    }
+
+    if (key === "metric_type") {
+      if (value !== "total_value" && value !== "time_series") {
+        setStatus("metric_type was reset to default.");
+      }
+      return;
+    }
+
+    if (key === "period") {
+      if (value === "day" || value === "week" || value === "month") {
+        setPeriod(value);
+      } else {
+        setPeriod("day");
+      }
+      return;
+    }
+
+    if (key === "timeframe") {
+      if (!value || !timeframeValueSet.has(value as InsightTimeframe)) {
+        setTimeframe("this_week");
+        return;
+      }
+
+      setTimeframe(value as InsightTimeframe);
+      return;
+    }
+
+    if (key === "breakdown") {
+      if (!value || !breakdownValueSet.has(value)) {
+        setBreakdown("");
+        return;
+      }
+
+      setBreakdown(value as InsightBreakdown);
+      return;
+    }
+
+    if (key === "since") {
+      const parsedDate = parseUnixDate(value);
+      if (!parsedDate) {
+        setCustomStartDate(undefined);
+        setCustomDateError(null);
+        return;
+      }
+
+      setRangeDays("custom");
+      setCustomStartDate(parsedDate);
+      if (customEndDate) {
+        setCustomDateError(validateCustomDateRange(parsedDate, customEndDate));
+      }
+      return;
+    }
+
+    if (key === "until") {
+      const parsedDate = parseUnixDate(value);
+      if (!parsedDate) {
+        setCustomEndDate(undefined);
+        setCustomDateError(null);
+        return;
+      }
+
+      setRangeDays("custom");
+      setCustomEndDate(parsedDate);
+      if (customStartDate) {
+        setCustomDateError(validateCustomDateRange(customStartDate, parsedDate));
+      }
+    }
+  };
+
+  const removeParameter = (key: string, required: boolean) => {
+    if (required) {
+      resetRequiredParameter(key);
+      return;
+    }
+
+    if (isMediaEndpoint) {
+      if (key === "fields") {
+        setMediaFields(DEFAULT_ACCOUNT_MEDIA_FIELDS);
+      }
+
+      return;
+    }
+
+    if (key === "timeframe") {
+      setTimeframe("this_week");
+      return;
+    }
+
+    if (key === "breakdown") {
+      setBreakdown("");
+      return;
+    }
+
+    if (key === "since" || key === "until") {
+      setRangeDays(7);
+      setCustomStartDate(undefined);
+      setCustomEndDate(undefined);
+      setCustomDateError(null);
+    }
+  };
+
+  const commitParameterDraft = (key: string) => {
+    const draftValue = parameterDrafts[key];
+    if (draftValue === undefined) {
+      return;
+    }
+
+    applyParameter(key, draftValue);
+    setParameterDrafts((previous) => {
+      const next = { ...previous };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const addParameter = () => {
+    if (!newParamKey.trim()) {
+      return;
+    }
+
+    applyParameter(newParamKey, newParamValue);
+    setNewParamKey("");
+    setNewParamValue("");
+  };
+
+  const removeCustomHeader = (key: string) => {
+    const normalizedKey = key.trim().toLowerCase();
+    setCustomHeaders((previous) =>
+      previous.filter((item) => item.key.trim().toLowerCase() !== normalizedKey),
+    );
+  };
+
+  const addCustomHeader = () => {
+    const key = newHeaderKey.trim();
+    const value = newHeaderValue.trim();
+
+    if (!key || !value) {
+      return;
+    }
+
+    setCustomHeaders((previous) => {
+      const next = previous.filter(
+        (item) => item.key.trim().toLowerCase() !== key.toLowerCase(),
+      );
+      next.push({ key, value });
+      return next;
+    });
+
+    setNewHeaderKey("");
+    setNewHeaderValue("");
+  };
+
+  const buildHttpHeaders = (): Record<string, string> => {
+    const headerMap: Record<string, string> = {};
+
+    for (const header of customHeaders) {
+      const key = header.key.trim();
+      const value = header.value.trim();
+      if (!key || !value) {
+        continue;
+      }
+
+      headerMap[key] = value;
+    }
+
+    if (authMode === "token") {
+      const token = bearerToken.trim().replace(/^Bearer\s+/i, "");
+      if (token) {
+        headerMap.Authorization = `Bearer ${token}`;
+      }
+    }
+
+    if (requestMethod !== "GET" && requestMethod !== "DELETE" && requestBody.trim()) {
+      const hasContentType = Object.keys(headerMap).some(
+        (key) => key.toLowerCase() === "content-type",
+      );
+
+      if (!hasContentType) {
+        headerMap["Content-Type"] = "application/json";
+      }
+    }
+
+    return headerMap;
+  };
+
+  const syncFromUrlInputInstagram = () => {
+    if (isHttpRequestMode) {
+      const singleUrl = sanitizeSingleUrlInput(editableUrl);
+      if (!singleUrl) {
+        setError("Please enter a URL before running the request.");
+        return;
+      }
+
+      try {
+        const parsed = new URL(singleUrl);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          throw new Error("Only http:// and https:// URLs are supported.");
+        }
+
+        setEditableUrl(parsed.toString());
+        setUrlInputDirty(false);
+        setError(null);
+      } catch (reason) {
+        setError(reason instanceof Error ? reason.message : "Invalid URL.");
+      }
+
+      return;
+    }
+
+    const fallbackUrl = apiUrlPreview || `${GRAPH_BASE_URL}<ig_account_id>/insights`;
+    const normalizedUrl = normalizeGraphUrl(editableUrl, fallbackUrl);
+    const pathParts = normalizedUrl.pathname.split("/").filter(Boolean);
+    const versionIndex = pathParts.findIndex((part) => /^v\d+\.\d+$/i.test(part));
+    const scopedPath = versionIndex >= 0 ? pathParts.slice(versionIndex + 1) : pathParts;
+    const [accountIdFromPath, endpointPath] = scopedPath;
+
+    if (endpointPath === "insights") {
+      setSelectedIdType("ig_user_id");
+      setSelectedEndpointId("ig_user_id/insights");
+    } else if (endpointPath === "media") {
+      setSelectedIdType("ig_user_id");
+      setSelectedEndpointId("ig_user_id/media");
+    } else if (endpointPath === "tags") {
+      setSelectedIdType("ig_user_id");
+      setSelectedEndpointId("ig_user_id/tags");
+    }
+
+    if (accountIdFromPath) {
+      const matchedAccount = session.accounts.find((item) => item.id === accountIdFromPath);
+      if (matchedAccount) {
+        setSelectedAccountIds([matchedAccount.id]);
+      }
+    }
+
+    const params = normalizedUrl.searchParams;
+
+    if (endpointPath === "media" || endpointPath === "tags") {
+      const fieldsParam = getFirstQueryValue(params, "fields") ?? "";
+      const parsedFields = parseCsvValues(fieldsParam, mediaFieldKeySet);
+      setMediaFields(parsedFields.length > 0 ? parsedFields : DEFAULT_ACCOUNT_MEDIA_FIELDS);
+
+      const limitParam = getFirstQueryValue(params, "limit");
+      const parsedLimit = Number(limitParam);
+      setMediaLimit(
+        Number.isFinite(parsedLimit)
+          ? Math.min(100, Math.max(1, Math.round(parsedLimit)))
+          : 25,
+      );
+    }
+
+    if (endpointPath === "insights") {
+      const metricParam = getFirstQueryValue(params, "metric") ?? "";
+      const parsedMetrics = parseCsvValues(metricParam, metricKeySet);
+      setMetrics(parsedMetrics.length > 0 ? parsedMetrics : DEFAULT_INSIGHT_METRICS);
+
+      const periodParam = getFirstQueryValue(params, "period");
+      if (periodParam === "day" || periodParam === "week" || periodParam === "month") {
+        setPeriod(periodParam);
+      } else {
+        setPeriod("day");
+      }
+
+      const timeframeParam = getFirstQueryValue(params, "timeframe");
+      if (timeframeParam && timeframeValueSet.has(timeframeParam as InsightTimeframe)) {
+        setTimeframe(timeframeParam as InsightTimeframe);
+      }
+
+      const breakdownParam = getFirstQueryValue(params, "breakdown");
+      setBreakdown(
+        breakdownParam && breakdownValueSet.has(breakdownParam)
+          ? (breakdownParam as InsightBreakdown)
+          : "",
+      );
+
+      const parsedSinceDate = parseUnixDate(getFirstQueryValue(params, "since"));
+      const parsedUntilDate = parseUnixDate(getFirstQueryValue(params, "until"));
+
+      if (parsedSinceDate || parsedUntilDate) {
+        setRangeDays("custom");
+        setCustomStartDate(parsedSinceDate);
+        setCustomEndDate(parsedUntilDate);
+        setCustomDateError(validateCustomDateRange(parsedSinceDate, parsedUntilDate));
+      } else {
+        setRangeDays(7);
+        setCustomStartDate(undefined);
+        setCustomEndDate(undefined);
+        setCustomDateError(null);
+      }
+    }
+
+    setEditableUrl(normalizedUrl.toString());
+    setUrlInputDirty(false);
+    setError(null);
+    setStatus("URL synced to parameters. Unsupported keys were ignored automatically.");
+  };
+
+  const handleLogout = () => {
+    setLoggingOut(true);
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("ana_session_id");
+      window.location.href = "/";
+    }
+  };
+
+  const handleNotionTableChange = (pageId: string, databaseId: string) => {
+    setNotionTableByPage((previous) => {
+      if (!databaseId.trim()) {
+        if (!(pageId in previous)) {
+          return previous;
+        }
+
+        const next = { ...previous };
+        delete next[pageId];
+        return next;
+      }
+
+      if (previous[pageId] === databaseId) {
+        return previous;
+      }
+
+      return {
+        ...previous,
+        [pageId]: databaseId,
+      };
+    });
+  };
+
+  const handleRefreshPages = (
+    pages: Array<{
+      id: string;
+      title: string;
+      databases?: Array<{ id: string; title: string; parentPageId?: string | null }>;
+    }>,
+  ) => {
+    setAvailableNotionPages(pages);
+    setAvailableNotionDatabases(
+      pages
+        .flatMap((page) =>
+          (page.databases ?? []).map((database) => ({
+            id: database.id,
+            title: database.title,
+            parentPageId: database.parentPageId ?? page.id,
+          })),
+        )
+        .reduce<Array<{ id: string; title: string; parentPageId: string }>>((acc, database) => {
+          if (!database.id.trim()) {
+            return acc;
+          }
+
+          if (acc.some((item) => item.id === database.id)) {
+            return acc;
+          }
+
+          acc.push(database);
+          return acc;
+        }, []),
+    );
+    setStatus("Notion pages refreshed successfully");
+  };
+
+  const handleDatabaseCreated = (database: { id: string; title: string; parentPageId: string }) => {
+    setAvailableNotionDatabases((previous) => [...previous, database]);
+    setNotionTableByPage((previous) => ({
+      ...previous,
+      [database.parentPageId]: database.id,
+    }));
+    setStatus(`Notion table "${database.title}" created successfully`);
+  };
+
+  const saveScheduleSettings = async () => {
+    setScheduleSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetchWithAuth("/api/schedule", {
+        method: "POST",
+        body: JSON.stringify({
+          autoSchedule,
+          notionTargetPageIds: notionPageIds,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error?.message ?? "Failed to update schedule settings.");
+      }
+
+      setStatus("Auto schedule settings saved.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Failed to update schedule settings.");
+    } finally {
+      setScheduleSaving(false);
+    }
+  };
+
+  const runOauth = async () => {
+    if (isInsightEndpoint && rangeDays === "custom") {
+      const dateError = validateCustomDateRange(customStartDate, customEndDate);
+      if (dateError) {
+        throw new Error(dateError);
+      }
+    }
+
+    const selectedIds = activeAccountId ? [activeAccountId] : [];
+    if (selectedIds.length === 0 && session.accounts[0]) {
+      selectedIds.push(session.accounts[0].id);
+    }
+
+    if (selectedIds.length === 0) {
+      throw new Error("No Instagram account available for this session.");
+    }
+
+    const response = await fetchWithAuth(isInsightEndpoint ? "/api/insights" : "/api/media", {
+      method: "POST",
+      body: JSON.stringify(
+        isInsightEndpoint
+          ? {
+            accountInputs: [],
+            selectedAccountIds: selectedIds,
+            metrics,
+            period,
+            rangeDays,
+            customStartDate: customStartDate ? format(customStartDate, "yyyy-MM-dd") : undefined,
+            customEndDate: customEndDate ? format(customEndDate, "yyyy-MM-dd") : undefined,
+            timeframe,
+            breakdown: breakdown || undefined,
+            mediaFormat,
+          }
+          : {
+            accountInputs: [],
+            selectedAccountIds: selectedIds,
+            endpoint,
+            fields: mediaFields,
+            limit: mediaLimit,
+          },
+      ),
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(
+        payload?.error?.message ??
+        (isInsightEndpoint ? "Failed to fetch insight data." : "Failed to fetch media data."),
+      );
+    }
+
+    setHttpReport(null);
+
+    if (isInsightEndpoint) {
+      const nextReport = payload as InsightReport;
+      setInsightReport(nextReport);
+      setMediaReport(null);
+
+      if (nextReport.query.warnings.length > 0) {
+        setStatus(`Insight data fetched with warnings: ${nextReport.query.warnings[0]}`);
+      } else {
+        setStatus("Insight data fetched successfully.");
+      }
+      return;
+    }
+
+    const nextReport = payload as MediaReport;
+    setMediaReport(nextReport);
+    setInsightReport(null);
+    setStatus("Account media data fetched successfully.");
+  };
+
+  const runHttpRequest = async () => {
+    const singleUrl = sanitizeSingleUrlInput(editableUrl);
+    if (!singleUrl) {
+      throw new Error("Please enter a URL before running the request.");
+    }
+
+    const targetUrl = new URL(singleUrl);
+    if (targetUrl.protocol !== "http:" && targetUrl.protocol !== "https:") {
+      throw new Error("Only http:// and https:// URLs are supported.");
+    }
+
+    const outgoingHeaders = buildHttpHeaders();
+    const includeBody = requestMethod !== "GET";
+
+    const response = await fetchWithAuth("/api/http/request", {
+      method: "POST",
+      body: JSON.stringify({
+        url: targetUrl.toString(),
+        method: requestMethod,
+        headers: outgoingHeaders,
+        body: includeBody ? requestBody : undefined,
+      }),
+    });
+
+    const payload = (await response.json()) as HttpRequestReport | { error?: { message?: string } };
+    if (!response.ok) {
+      throw new Error(payload && "error" in payload ? payload.error?.message ?? "HTTP request failed." : "HTTP request failed.");
+    }
+
+    const nextReport = payload as HttpRequestReport;
+    setHttpReport(nextReport);
+    setInsightReport(null);
+    setMediaReport(null);
+    setStatus(`HTTP request completed (${nextReport.response.status} ${nextReport.response.statusText}).`);
+  };
+
+  const runAnalysis = async () => {
+    setRunning(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      if (isOAuthMode) {
+        await runOauth();
+      } else {
+        await runHttpRequest();
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unknown error.");
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const saveResult = async () => {
+    if (!insightReport && !mediaReport) {
+      setError("No data to save. Please run analysis first.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      const updatedTableByPage = { ...notionTableByPage };
+      const outputFields = getOutputFields();
+
+      if (saveToNotion) {
+        // Check if any selected tables are "Create Default Table" and create them if needed.
+        for (const [pageId, tableValue] of Object.entries(notionTableByPage)) {
+          if (tableValue.startsWith("__create_default_")) {
+            const page = session.notionPages.find((p) => p.id === pageId);
+            if (!page) continue;
+
+            try {
+              const defaultTableName = `${page.title} - Default`;
+              const createResponse = await fetchWithAuth("/api/notion/databases", {
+                method: "POST",
+                body: JSON.stringify({
+                  parentPageId: pageId,
+                  databaseTitle: defaultTableName,
+                  defaultFields: outputFields.length > 0 ? outputFields : DEFAULT_ACCOUNT_MEDIA_FIELDS,
+                }),
+              });
+
+              if (!createResponse.ok) {
+                const errorData = await createResponse.json().catch(() => ({}));
+                const errorMessage = typeof errorData.error === "string"
+                  ? errorData.error
+                  : typeof errorData.error === "object"
+                    ? JSON.stringify(errorData.error)
+                    : "Failed to create default table";
+                throw new Error(errorMessage);
+              }
+
+              const database = await createResponse.json();
+              updatedTableByPage[pageId] = database.id;
+
+              setNotionTableByPage((prev) => ({
+                ...prev,
+                [pageId]: database.id,
+              }));
+
+              setAvailableNotionDatabases((prev) => [
+                ...prev,
+                { id: database.id, title: database.title, parentPageId: pageId },
+              ]);
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+              console.error(`Failed to create default table for page ${pageId}:`, errorMessage);
+              setError(errorMessage);
+              setSaving(false);
+              return;
+            }
+          }
+        }
+      }
+
+      const response = await fetchWithAuth("/api/save", {
+        method: "POST",
+        body: JSON.stringify({
+          sourceAccount:
+            insightReport?.accounts[0]?.accountId
+              ? `instagram:${insightReport.accounts[0].accountId}`
+              : mediaReport?.accounts[0]?.accountId
+                ? `instagram:${mediaReport.accounts[0].accountId}`
+                : "instagram:unknown",
+          report: insightReport ?? undefined,
+          mediaReport: mediaReport ?? undefined,
+          saveToNotion,
+          notionPageIds,
+          notionDatabaseByPageId: updatedTableByPage,
+        }),
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.error?.message ?? "Failed to save data.");
+      }
+
+      // TODO: Re-enable when free limit is active
+      // setStatus(`Data saved. Remaining free saves: ${payload.remainingFreeSaves}.`);
+      const notionStatus =
+        typeof payload?.notionMessage === "string" ? payload.notionMessage.trim() : "";
+
+      if (saveToNotion) {
+        if (notionStatus.length > 0) {
+          setStatus(notionStatus);
+        } else if (payload?.savedToNotion) {
+          setStatus("Data saved to Notion successfully.");
+        } else {
+          setStatus("Data saved locally. No data was written to Notion.");
+        }
+      } else {
+        setStatus("Data saved successfully.");
+      }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unknown error.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const exportN8n = async () => {
+    if (!insightReport) {
+      setError("Export n8n only supports Account Insight data.");
+      return;
+    }
+
+    if (exportTargetIds.length === 0) {
+      setError("Please select at least one Notion page before exporting n8n workflow.");
+      return;
+    }
+
+    setExporting(true);
+    setError(null);
+
+    try {
+      const response = await fetchWithAuth("/api/n8n/export", {
+        method: "POST",
+        body: JSON.stringify({
+          pageIds: exportTargetIds,
+          graphUrl: insightReport.query.urlPreview,
+          metrics: insightReport.query.metrics,
+          period: insightReport.query.period,
+          rangeDays: insightReport.query.rangeDays,
+          metricType: insightReport.query.metricType,
+          timeframe: insightReport.query.timeframe,
+          breakdown: insightReport.query.breakdown,
+          autoSchedule,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        throw new Error(payload?.error?.message ?? "Failed to export n8n workflow.");
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = `ana-social-workflow-${Date.now()}.json`;
+      anchor.click();
+      URL.revokeObjectURL(objectUrl);
+
+      setStatus("Exported n8n workflow JSON.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Unknown error.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const formatMediaCellValue = (value: unknown) => {
     if (value === null || value === undefined) {
       return "-";
@@ -649,801 +1588,171 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#f8fafc,_#f2f5ff_42%,_#eef2ff)] px-3 py-6 sm:px-6 lg:px-10">
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <Card className="overflow-hidden rounded-2xl border-zinc-300/70 shadow-[0_14px_35px_-28px_rgba(24,39,75,0.45)]">
-          <CardHeader className="border-b border-zinc-200/90 px-5 py-4 sm:px-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-fuchsia-500 via-pink-500 to-orange-400 text-white">
-                  <Camera className="h-3.5 w-3.5" />
-                </div>
-                <div>
-                  <CardTitle className="text-3xl">Instagram Request Builder</CardTitle>
-                  <CardDescription className="mt-1 text-[1.05rem] text-zinc-600">
-                    Build URL for the Instagram Graph API.
-                  </CardDescription>
-                </div>
-              </div>
-              <div className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-300 bg-zinc-50 text-zinc-500">
-                <Info className="h-4 w-4" />
-              </div>
-            </div>
-          </CardHeader>
+    <SidebarProvider defaultOpen>
+      <ConsoleSidebar
+        notionWorkspaceName={session.notionWorkspaceName}
+        remainingFreeSaves={session.remainingFreeSaves}
+        loggingOut={loggingOut}
+        onNewRequest={() => {
+          setInsightReport(null);
+          setMediaReport(null);
+          setHttpReport(null);
+          setStatus("Ready to create a new request.");
+          setError(null);
+        }}
+        onOpenTutorial={() => setTutorialOpen(true)}
+        onLogout={handleLogout}
+      />
 
-          <CardContent className="space-y-5 px-4 pb-5 pt-4 sm:px-5 sm:pb-6">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="endpoint" className="text-3xl text-zinc-800">
-                  Endpoint
-                </Label>
-                <div className="relative">
-                  <select
-                    id="endpoint"
-                    className="h-12 w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 pr-10 text-lg text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                    value={endpoint}
-                    onChange={(event) => setEndpoint(event.target.value as EndpointKey)}
-                  >
-                    {ENDPOINT_OPTIONS.map((option) => (
-                      <option key={option.key} value={option.key}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                </div>
-                <p className="text-sm text-zinc-500">{selectedEndpointPath}</p>
-              </div>
+      <SidebarInset className="min-h-svh">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/70 bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 md:px-6">
+          <SidebarTrigger />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold">Instagram Request Builder</p>
+            <p className="truncate text-xs text-muted-foreground">Modular console with reusable integrations</p>
+          </div>
+          <Button type="button" variant="ghost" size="sm" className="ml-auto" onClick={() => setTutorialOpen(true)}>
+            <Info className="h-4 w-4" />
+            Tutorial
+          </Button>
+        </header>
 
-              <div className="space-y-2">
-                <Label htmlFor="instagramAccount" className="text-3xl text-zinc-800">
-                  Instagram Account
-                </Label>
+        <main className="flex-1 overflow-auto p-4 md:p-6">
+          <div className="grid gap-6">
+            <InstagramBuilderCard
+              selectedIdType={selectedIdType}
+              setSelectedIdType={setSelectedIdType}
+              selectedEndpointId={selectedEndpointId}
+              setSelectedEndpointId={setSelectedEndpointId}
+              activeEndpoint={activeEndpoint}
+              isMediaIdType={isMediaIdType}
+              idTypeDropdownOptions={idTypeDropdownOptions}
+              edgeDropdownOptions={edgeDropdownOptions}
+              loadingMedia={loadingMedia}
+              selectedMediaId={selectedMediaId}
+              setSelectedMediaId={setSelectedMediaId}
+              mediaPickerOptions={mediaPickerOptions}
+              accountMediaList={accountMediaList}
+              selectedMediaType={selectedMediaType}
+              setSelectedMediaType={setSelectedMediaType}
+              isInsightEndpoint={isInsightEndpoint}
+              isMediaEndpoint={isMediaEndpoint}
+              metrics={metrics}
+              setMetrics={setMetrics}
+              activeMetricOptions={activeMetricOptions}
+              period={period}
+              setPeriod={setPeriod}
+              timeframe={timeframe}
+              setTimeframe={setTimeframe}
+              breakdown={breakdown}
+              setBreakdown={setBreakdown}
+              rangeDays={rangeDays}
+              setRangeDays={setRangeDays}
+              registryValidation={registryValidation}
+              registryWarnings={registryWarnings}
+              selectionWarning={selectionWarning}
+              customStartDate={customStartDate}
+              setCustomStartDate={setCustomStartDate}
+              customEndDate={customEndDate}
+              setCustomEndDate={setCustomEndDate}
+              customDateError={customDateError}
+              setCustomDateError={setCustomDateError}
+              startDatePopoverOpen={startDatePopoverOpen}
+              setStartDatePopoverOpen={setStartDatePopoverOpen}
+              endDatePopoverOpen={endDatePopoverOpen}
+              setEndDatePopoverOpen={setEndDatePopoverOpen}
+              mediaFields={mediaFields}
+              setMediaFields={setMediaFields}
+              mediaLimit={mediaLimit}
+              setMediaLimit={setMediaLimit}
+              activeFieldOptions={activeFieldOptions}
+              periodDropdownOptions={periodDropdownOptions}
+              timeframeDropdownOptions={timeframeDropdownOptions}
+              breakdownDropdownOptions={breakdownDropdownOptions}
+              dateRangeDropdownOptions={dateRangeDropdownOptions}
+              NO_BREAKDOWN_VALUE={NO_BREAKDOWN_VALUE}
+              parseRangeDays={parseRangeDays}
+              validateCustomDateRange={validateCustomDateRange}
+            />
 
-                {session.facebookConnected ? (
-                  <div className="relative">
-                    <select
-                      id="instagramAccount"
-                      className="h-12 w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 pr-20 text-lg text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                      value={activeAccountId}
-                      onChange={(event) => {
-                        const nextValue = event.target.value;
-                        setSelectedAccountIds(nextValue ? [nextValue] : []);
-                      }}
-                    >
-                      {session.accounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.username}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="absolute right-10 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-500 transition hover:bg-zinc-100"
-                      onClick={() => setSelectedAccountIds([])}
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                  </div>
-                ) : (
-                  <a href="/api/auth/facebook/start" className="inline-flex">
-                    <Button variant="outline" className="h-12 gap-2 px-4 text-base">
-                      <Plug className="h-4 w-4" />
-                      Connect Facebook Business
-                    </Button>
-                  </a>
-                )}
-              </div>
-            </div>
+            <HttpRequestCard
+              queryTab={queryTab}
+              setQueryTab={setQueryTab}
+              requestMethod={requestMethod}
+              setRequestMethod={setRequestMethod}
+              isOAuthMode={isOAuthMode}
+              editableUrl={editableUrl}
+              setEditableUrl={setEditableUrl}
+              syncFromUrlInputInstagram={syncFromUrlInputInstagram}
+              requestParameterRows={requestParameterRows}
+              parameterDrafts={parameterDrafts}
+              setParameterDrafts={setParameterDrafts}
+              newParamKey={newParamKey}
+              setNewParamKey={setNewParamKey}
+              newParamValue={newParamValue}
+              setNewParamValue={setNewParamValue}
+              removeParameter={removeParameter}
+              addParameter={addParameter}
+              commitParameterDraft={commitParameterDraft}
+              customHeaders={customHeaders}
+              newHeaderKey={newHeaderKey}
+              setNewHeaderKey={setNewHeaderKey}
+              newHeaderValue={newHeaderValue}
+              setNewHeaderValue={setNewHeaderValue}
+              addCustomHeader={addCustomHeader}
+              removeCustomHeader={removeCustomHeader}
+              bodyMode={bodyMode}
+              setBodyMode={setBodyMode}
+              requestBody={requestBody}
+              setRequestBody={setRequestBody}
+              authMode={authMode}
+              setAuthMode={setAuthMode}
+              hasOAuthConnection={hasOAuthConnection}
+              bearerToken={bearerToken}
+              setBearerToken={setBearerToken}
+              running={running}
+              runAnalysis={runAnalysis}
+              saving={saving}
+              exporting={exporting}
+              status={status}
+              error={error}
+              isInsightEndpoint={isInsightEndpoint}
+              insightReport={insightReport}
+              mediaReport={mediaReport}
+              httpReport={httpReport}
+              integrationSession={integrationSession}
+              selectedNotionPageIds={notionPageIds}
+              setNotionPageIds={setNotionPageIds}
+              notionTableByPage={notionTableByPage}
+              handleNotionTableChange={handleNotionTableChange}
+              autoSchedule={autoSchedule}
+              setAutoSchedule={setAutoSchedule}
+              saveScheduleSettings={saveScheduleSettings}
+              scheduleSaving={scheduleSaving}
+              handleRefreshPages={handleRefreshPages}
+              handleDatabaseCreated={handleDatabaseCreated}
+              saveToNotion={saveToNotion}
+              setSaveToNotion={setSaveToNotion}
+              saveResult={saveResult}
+              exportN8n={exportN8n}
+            />
 
-            {isInsightEndpoint ? (
-              <>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label className="text-3xl text-zinc-800">Metrics</Label>
-                    <div ref={metricsMenuRef} className="relative">
-                      <button
-                        ref={metricsButtonRef}
-                        type="button"
-                        className="flex min-h-[76px] w-full items-stretch rounded-lg border border-zinc-300 bg-white text-left"
-                        onClick={() => setMetricsMenuOpen((prev) => !prev)}
-                      >
-                        <div className="flex flex-1 flex-wrap items-center gap-2 px-2 py-2">
-                          {selectedMetricOptions.length === 0 ? (
-                            <span className="px-1 text-base text-zinc-400">Select metrics</span>
-                          ) : (
-                            selectedMetricOptions.map((item) => (
-                              <Badge
-                                key={item.key}
-                                className="border-blue-300 bg-blue-100 px-2.5 py-1 text-base text-blue-700"
-                              >
-                                <span>{item.label}</span>
-                                <span
-                                  role="button"
-                                  tabIndex={0}
-                                  className="ml-1 rounded text-blue-500 hover:text-blue-700"
-                                  onClick={(event) => {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    removeMetric(item.key);
-                                  }}
-                                  onKeyDown={(event) => {
-                                    if (event.key === "Enter" || event.key === " ") {
-                                      event.preventDefault();
-                                      event.stopPropagation();
-                                      removeMetric(item.key);
-                                    }
-                                  }}
-                                >
-                                  x
-                                </span>
-                              </Badge>
-                            ))
-                          )}
-                        </div>
-                        <div className="flex w-[74px] items-center justify-center gap-2 border-l border-zinc-300 text-zinc-500">
-                          <span
-                            role="button"
-                            tabIndex={0}
-                            className="rounded p-1 transition hover:bg-zinc-100"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              setMetrics(["reach", "accounts_engaged"]);
-                            }}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter" || event.key === " ") {
-                                event.preventDefault();
-                                event.stopPropagation();
-                                setMetrics(["reach", "accounts_engaged"]);
-                              }
-                            }}
-                          >
-                            <X className="h-4 w-4" />
-                          </span>
-                          <ChevronDown className="h-5 w-5" />
-                        </div>
-                      </button>
+            <OutputCard
+              isHttpMode={isHttpRequestMode}
+              isInsightEndpoint={isInsightEndpoint}
+              isMediaEndpoint={isMediaEndpoint}
+              httpReport={httpReport}
+              insightReport={insightReport}
+              mediaReport={mediaReport}
+              mediaTableFields={mediaTableFields}
+              mediaRows={mediaRows}
+              formatMediaCellValue={formatMediaCellValue}
+            />
+          </div>
+        </main>
+      </SidebarInset>
 
-                      {metricsMenuOpen && typeof document !== "undefined"
-                        ? createPortal(
-                            <div
-                              ref={metricsMenuPanelRef}
-                              className="fixed z-50 max-h-[340px] overflow-y-auto rounded-lg border border-zinc-300 bg-white py-1 shadow-[0_18px_40px_-28px_rgba(24,39,75,0.65)]"
-                              style={{
-                                top: metricsMenuPosition.top,
-                                left: metricsMenuPosition.left,
-                                width: metricsMenuPosition.width,
-                              }}
-                            >
-                              {METRIC_GROUPS.map((group) => (
-                                <div key={group.title}>
-                                  <p className="px-3 py-1 text-base font-semibold text-zinc-400">{group.title}</p>
-                                  {group.options.map((item) => {
-                                    const selected = metrics.includes(item.key);
-
-                                    return (
-                                      <button
-                                        key={item.key}
-                                        type="button"
-                                        className="flex w-full items-start justify-between gap-3 px-3 py-2 text-left transition hover:bg-zinc-100"
-                                        onClick={(event) => {
-                                          event.stopPropagation();
-                                          toggleMetric(item.key);
-                                        }}
-                                      >
-                                        <div>
-                                          <p className="text-base font-medium text-zinc-800">{item.label}</p>
-                                          <p className="text-sm text-zinc-500">{item.description}</p>
-                                        </div>
-                                        <input
-                                          type="checkbox"
-                                          checked={selected}
-                                          readOnly
-                                          className="pointer-events-none mt-1 h-4 w-4"
-                                        />
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              ))}
-                            </div>,
-                            document.body,
-                          )
-                        : null}
-                    </div>
-
-                    {selectionWarning ? (
-                      <p className="flex items-start gap-2 text-sm text-amber-700">
-                        <CircleAlert className="mt-0.5 h-4 w-4" />
-                        <span>{selectionWarning}</span>
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="period" className="text-3xl text-zinc-800">
-                        Period
-                      </Label>
-                      <div className="relative">
-                        <select
-                          id="period"
-                          className="h-12 w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 pr-16 text-lg text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                          value={period}
-                          onChange={(event) => setPeriod(event.target.value as "day" | "week" | "month")}
-                        >
-                          <option value="day">Daily</option>
-                          <option value="week">Weekly</option>
-                          <option value="month">Monthly</option>
-                        </select>
-                        <span className="absolute right-8 top-1/2 -translate-y-1/2 text-zinc-400">x</span>
-                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      {resolvedSelection.group === "demographic" ? (
-                        <>
-                          <Label htmlFor="timeframe" className="text-3xl text-zinc-800">
-                            Timeframe
-                          </Label>
-                          <div className="relative">
-                            <select
-                              id="timeframe"
-                              className="h-12 w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 pr-10 text-lg text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                              value={timeframe}
-                              onChange={(event) =>
-                                setTimeframe(event.target.value as InsightTimeframe)
-                              }
-                            >
-                              {TIMEFRAME_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <Label htmlFor="dateRange" className="text-3xl text-zinc-800">
-                            Date Range
-                          </Label>
-                          <div className="relative">
-                            <select
-                              id="dateRange"
-                              className="h-12 w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 pr-10 text-lg text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                              value={rangeDays}
-                              onChange={(event) => setRangeDays(Number(event.target.value) as 7 | 30)}
-                            >
-                              {DATE_RANGE_OPTIONS.map((option) => (
-                                <option key={option.value} value={option.value}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </select>
-                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="breakdown" className="text-3xl text-zinc-800">
-                    Breakdown
-                  </Label>
-                  <div className="relative">
-                    <select
-                      id="breakdown"
-                      className="h-12 w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 pr-10 text-lg text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200"
-                      value={breakdown}
-                      onChange={(event) => setBreakdown(event.target.value as InsightBreakdown | "")}
-                    >
-                      <option value="">No breakdown</option>
-                      {resolvedSelection.allowedBreakdowns.map((item) => (
-                        <option key={item} value={item}>
-                          {BREAKDOWN_LABELS[item]}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                  </div>
-                  <p className="text-sm text-zinc-500">
-                    Available breakdowns change automatically based on the selected metric group.
-                  </p>
-                </div>
-              </>
-            ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label className="text-3xl text-zinc-800">Fields to retrieve</Label>
-                  <div ref={fieldsMenuRef} className="relative">
-                    <button
-                      ref={fieldsButtonRef}
-                      type="button"
-                      className="flex min-h-[76px] w-full items-stretch rounded-lg border border-zinc-300 bg-white text-left"
-                      onClick={() => setFieldsMenuOpen((prev) => !prev)}
-                    >
-                      <div className="flex flex-1 flex-wrap items-center gap-2 px-2 py-2">
-                        {selectedMediaFieldOptions.length === 0 ? (
-                          <span className="px-1 text-base text-zinc-400">Select media fields</span>
-                        ) : (
-                          selectedMediaFieldOptions.map((item) => (
-                            <Badge
-                              key={item.key}
-                              className="border-sky-300 bg-sky-100 px-2.5 py-1 text-base text-sky-700"
-                            >
-                              <span>{item.label}</span>
-                              <span
-                                role="button"
-                                tabIndex={0}
-                                className="ml-1 rounded text-sky-500 hover:text-sky-700"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  removeMediaField(item.key);
-                                }}
-                                onKeyDown={(event) => {
-                                  if (event.key === "Enter" || event.key === " ") {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                    removeMediaField(item.key);
-                                  }
-                                }}
-                              >
-                                x
-                              </span>
-                            </Badge>
-                          ))
-                        )}
-                      </div>
-                      <div className="flex w-[74px] items-center justify-center gap-2 border-l border-zinc-300 text-zinc-500">
-                        <span
-                          role="button"
-                          tabIndex={0}
-                          className="rounded p-1 transition hover:bg-zinc-100"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setMediaFields(DEFAULT_ACCOUNT_MEDIA_FIELDS);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter" || event.key === " ") {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              setMediaFields(DEFAULT_ACCOUNT_MEDIA_FIELDS);
-                            }
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </span>
-                        <ChevronDown className="h-5 w-5" />
-                      </div>
-                    </button>
-
-                    {fieldsMenuOpen && typeof document !== "undefined"
-                      ? createPortal(
-                          <div
-                            ref={fieldsMenuPanelRef}
-                            className="fixed z-50 max-h-[340px] overflow-y-auto rounded-lg border border-zinc-300 bg-white py-1 shadow-[0_18px_40px_-28px_rgba(24,39,75,0.65)]"
-                            style={{
-                              top: fieldsMenuPosition.top,
-                              left: fieldsMenuPosition.left,
-                              width: fieldsMenuPosition.width,
-                            }}
-                          >
-                            {MEDIA_FIELD_GROUPS.map((group) => (
-                              <div key={group.title}>
-                                <p className="px-3 py-1 text-base font-semibold text-zinc-400">{group.title}</p>
-                                {group.options.map((item) => {
-                                  const selected = mediaFields.includes(item.key);
-
-                                  return (
-                                    <button
-                                      key={item.key}
-                                      type="button"
-                                      className="flex w-full items-start justify-between gap-3 px-3 py-2 text-left transition hover:bg-zinc-100"
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        toggleMediaField(item.key);
-                                      }}
-                                    >
-                                      <div>
-                                        <p className="text-base font-medium text-zinc-800">{item.label}</p>
-                                        <p className="text-sm text-zinc-500">{item.description}</p>
-                                      </div>
-                                      <input
-                                        type="checkbox"
-                                        checked={selected}
-                                        readOnly
-                                        className="pointer-events-none mt-1 h-4 w-4"
-                                      />
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            ))}
-                          </div>,
-                          document.body,
-                        )
-                      : null}
-                  </div>
-                  <p className="text-sm text-zinc-500">
-                    Media fields are independent from Insight metrics and map directly to /media or /tags.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="mediaLimit" className="text-3xl text-zinc-800">
-                    Limit
-                  </Label>
-                  <Input
-                    id="mediaLimit"
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={mediaLimit}
-                    onChange={(event) => {
-                      const nextValue = Number(event.target.value);
-                      if (!Number.isFinite(nextValue)) {
-                        return;
-                      }
-
-                      setMediaLimit(Math.min(100, Math.max(1, nextValue)));
-                    }}
-                    className="h-12 text-lg"
-                  />
-                  <p className="text-sm text-zinc-500">
-                    Max 100 records per account for each request.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {session.accounts.length === 0 ? (
-              <div className="space-y-2">
-                <Label htmlFor="accountsManual" className="text-sm text-zinc-700">
-                  Manual account list (one username or ID each line)
-                </Label>
-                <Textarea
-                  id="accountsManual"
-                  value={accountInputText}
-                  onChange={(event) => setAccountInputText(event.target.value)}
-                  placeholder={"@im_minhkwan\n17841478032910734"}
-                  className="min-h-20 text-sm"
-                />
-              </div>
-            ) : null}
-
-            <div className="grid gap-3 md:grid-cols-[120px_1fr]">
-              <div className="space-y-2">
-                <Label className="text-3xl text-zinc-800">Method</Label>
-                <div className="relative">
-                  <select className="h-12 w-full appearance-none rounded-lg border border-zinc-300 bg-white px-3 pr-9 text-lg text-zinc-800">
-                    <option value="GET">GET</option>
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-3xl text-zinc-800">URL</Label>
-                <div className="rounded-lg border border-zinc-300 bg-zinc-50 px-3 py-2 text-sm leading-6 text-zinc-800">
-                  {activeUrlPreview}
-                </div>
-              </div>
-            </div>
-
-            <Tabs defaultValue="parameters" className="overflow-hidden rounded-xl border border-zinc-300">
-              <TabsList className="grid h-auto w-full grid-cols-4 rounded-none bg-zinc-50 p-0">
-                <TabsTrigger
-                  value="parameters"
-                  className="rounded-none border-r border-zinc-200 px-4 py-3 text-base font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                >
-                  Parameters
-                </TabsTrigger>
-                <TabsTrigger
-                  value="headers"
-                  className="rounded-none border-r border-zinc-200 px-4 py-3 text-base font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                >
-                  Headers
-                </TabsTrigger>
-                <TabsTrigger
-                  value="body"
-                  className="rounded-none border-r border-zinc-200 px-4 py-3 text-base font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                >
-                  Body
-                </TabsTrigger>
-                <TabsTrigger
-                  value="authorization"
-                  className="rounded-none px-4 py-3 text-base font-medium data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-                >
-                  Authorization
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="parameters" className="mt-0 space-y-3 px-3 py-3">
-                {requestParameterRows.map((item) => (
-                  <div key={item.key} className="grid items-center gap-2 sm:grid-cols-[1fr_1fr_auto]">
-                    <Input value={item.key} readOnly className="h-11 text-base" />
-                    <Input value={item.value} readOnly className="h-11 text-base" />
-                    <button
-                      type="button"
-                      className="justify-self-end rounded p-2 text-zinc-500 transition hover:bg-zinc-100"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                ))}
-
-                <Button type="button" variant="outline" className="h-10 gap-1.5 px-4 text-base">
-                  <Plus className="h-4 w-4" />
-                  Add
-                </Button>
-              </TabsContent>
-
-              <TabsContent value="headers" className="mt-0 px-3 py-6 text-sm text-zinc-500">
-                Authorization headers are managed automatically from your connected session.
-              </TabsContent>
-
-              <TabsContent value="body" className="mt-0 px-3 py-6 text-sm text-zinc-500">
-                GET request does not include a request body.
-              </TabsContent>
-
-              <TabsContent value="authorization" className="mt-0 px-3 py-6 text-sm text-zinc-500">
-                Facebook OAuth token is attached when your account is connected.
-              </TabsContent>
-            </Tabs>
-
-            <div className="grid gap-3 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="notionPage" className="text-sm text-zinc-700">
-                  Notion Page ID
-                </Label>
-                <Input
-                  id="notionPage"
-                  value={notionPageId}
-                  onChange={(event) => setNotionPageId(event.target.value)}
-                  placeholder="33c72ef6905280af9f96cb4080143936"
-                  className="h-11"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm text-zinc-700">Facebook Integration</Label>
-                {session.facebookConnected ? (
-                  <div className="flex h-11 items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 text-sm text-emerald-700">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Facebook connected
-                  </div>
-                ) : (
-                  <a href="/api/auth/facebook/start" className="inline-flex">
-                    <Button variant="outline" className="h-11 gap-2">
-                      <Plug className="h-4 w-4" />
-                      Connect Facebook Business
-                    </Button>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={saveResult}
-                disabled={saving || !insightReport || !isInsightEndpoint}
-                className="gap-2"
-              >
-                {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-                Save Data
-              </Button>
-              <Button
-                variant="outline"
-                onClick={exportN8n}
-                disabled={exporting || !insightReport || !isInsightEndpoint}
-                className="gap-2"
-              >
-                {exporting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                Export n8n JSON
-              </Button>
-              <a href="/api/session" target="_blank" rel="noreferrer" className="inline-flex">
-                <Button variant="ghost" className="gap-2 text-zinc-600">
-                  <ExternalLink className="h-4 w-4" />
-                  Debug Session
-                </Button>
-              </a>
-            </div>
-
-            <div className="flex items-center gap-3 text-zinc-500">
-              <div className="relative h-8 w-14 rounded-full bg-zinc-200 p-1">
-                <div className="h-6 w-6 rounded-full bg-white shadow-sm" />
-              </div>
-              <span className="text-[1.05rem] font-medium">Auto Schedule</span>
-              <span className="inline-flex items-center rounded border border-zinc-300 px-1.5 py-0.5 text-xs">
-                <Lock className="h-3 w-3" />
-              </span>
-            </div>
-
-            <Button
-              onClick={runAnalysis}
-              disabled={running}
-              className="h-14 w-full rounded-full bg-blue-600 text-xl font-semibold hover:bg-blue-500"
-            >
-              {running ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
-              Run
-            </Button>
-
-            <div className="flex items-center gap-2 text-sm text-zinc-600">
-              <input
-                id="saveToNotion"
-                type="checkbox"
-                checked={saveToNotion}
-                onChange={(event) => setSaveToNotion(event.target.checked)}
-              />
-              <Label htmlFor="saveToNotion">Save to Notion simultaneously</Label>
-              <Badge>{session.remainingFreeSaves} free saves left</Badge>
-            </div>
-
-            {status ? (
-              <Alert className="border-emerald-200 bg-emerald-50 text-emerald-700">{status}</Alert>
-            ) : null}
-            {error ? (
-              <Alert className="border-red-200 bg-red-50 text-red-700">
-                <div className="flex items-start gap-2">
-                  <CircleAlert className="mt-0.5 h-4 w-4" />
-                  <span>{error}</span>
-                </div>
-              </Alert>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">
-              {isInsightEndpoint ? "Account Insight Output" : "Account Media Output"}
-            </CardTitle>
-            <CardDescription>
-              Data is rendered safely so missing fields from Instagram API do not break the UI.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isInsightEndpoint && !insightReport ? (
-              <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-                No data yet. Press Run to start.
-              </div>
-            ) : isMediaEndpoint && !mediaReport ? (
-              <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-                No media data yet. Press Run to start.
-              </div>
-            ) : isInsightEndpoint && insightReport ? (
-              <Tabs defaultValue="table">
-                <TabsList>
-                  <TabsTrigger value="table">Table</TabsTrigger>
-                  <TabsTrigger value="insight">Recommendations</TabsTrigger>
-                  <TabsTrigger value="raw">Raw JSON</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="table">
-                  {insightReport.invalidAccounts.length > 0 ? (
-                    <Alert className="mb-3 border-amber-200 bg-amber-50 text-amber-800">
-                      Tai khoan khong hop le: {insightReport.invalidAccounts.join(", ")}
-                    </Alert>
-                  ) : null}
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Account</TableHead>
-                        <TableHead>Reach</TableHead>
-                        <TableHead>Impressions</TableHead>
-                        <TableHead>Engaged</TableHead>
-                        <TableHead>Profile Views</TableHead>
-                        <TableHead>Engagement Rate</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {insightReport.accounts.map((account) => {
-                        const sum = (arr: Array<{ value: number }>) =>
-                          arr.reduce((total, point) => total + point.value, 0);
-
-                        return (
-                          <TableRow key={account.accountId}>
-                            <TableCell className="font-medium">@{account.accountHandle}</TableCell>
-                            <TableCell>{sum(account.reach)}</TableCell>
-                            <TableCell>{sum(account.impressions)}</TableCell>
-                            <TableCell>{sum(account.accountsEngaged)}</TableCell>
-                            <TableCell>{sum(account.profileViews)}</TableCell>
-                            <TableCell>{(account.engagementRate * 100).toFixed(2)}%</TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-
-                <TabsContent value="insight" className="space-y-3">
-                  {insightReport.accounts.flatMap((account) => account.recommendations).length === 0 ? (
-                    <p className="text-sm text-zinc-500">Khong co khuyen nghi.</p>
-                  ) : (
-                    insightReport.accounts.flatMap((account) => account.recommendations).map((item, index) => (
-                      <div key={`${item.title}-${index}`} className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-                        <div className="mb-1 flex items-center gap-2">
-                          <p className="text-sm font-semibold text-zinc-900">{item.title}</p>
-                          <Badge className="capitalize">{item.confidence}</Badge>
-                        </div>
-                        <p className="text-sm text-zinc-600">{item.summary}</p>
-                      </div>
-                    ))
-                  )}
-                </TabsContent>
-
-                <TabsContent value="raw">
-                  <pre className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-950 p-4 text-xs text-zinc-100">
-                    {JSON.stringify(insightReport, null, 2)}
-                  </pre>
-                </TabsContent>
-              </Tabs>
-            ) : isMediaEndpoint && mediaReport ? (
-              <Tabs defaultValue="table">
-                <TabsList>
-                  <TabsTrigger value="table">Table</TabsTrigger>
-                  <TabsTrigger value="raw">Raw JSON</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="table">
-                  {mediaReport.invalidAccounts.length > 0 ? (
-                    <Alert className="mb-3 border-amber-200 bg-amber-50 text-amber-800">
-                      Tai khoan khong hop le: {mediaReport.invalidAccounts.join(", ")}
-                    </Alert>
-                  ) : null}
-
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Account</TableHead>
-                        {mediaTableFields.map((field) => (
-                          <TableHead key={field}>{field}</TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mediaRows.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={mediaTableFields.length + 1} className="text-center text-zinc-500">
-                            Khong co media records.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        mediaRows.map((row) => (
-                          <TableRow key={row.key}>
-                            <TableCell className="font-medium">@{row.accountHandle}</TableCell>
-                            {mediaTableFields.map((field) => (
-                              <TableCell key={`${row.key}-${field}`}>{formatMediaCellValue(row.item[field])}</TableCell>
-                            ))}
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </TabsContent>
-
-                <TabsContent value="raw">
-                  <pre className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-950 p-4 text-xs text-zinc-100">
-                    {JSON.stringify(mediaReport, null, 2)}
-                  </pre>
-                </TabsContent>
-              </Tabs>
-            ) : (
-              <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-                No data yet. Press Run to start.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </main>
-    </div>
+      <TutorialDialog open={tutorialOpen} onOpenChange={setTutorialOpen} />
+    </SidebarProvider>
   );
 }

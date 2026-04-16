@@ -3,6 +3,7 @@ export type MediaFieldOption = {
   label: string;
   description: string;
   uiGroup: string;
+  deprecatedFor?: "tagged_media" | "account_media";
 };
 
 export const ACCOUNT_MEDIA_FIELD_OPTIONS: MediaFieldOption[] = [
@@ -47,6 +48,7 @@ export const ACCOUNT_MEDIA_FIELD_OPTIONS: MediaFieldOption[] = [
     label: "Username",
     description: "Username of the Instagram account",
     uiGroup: "BASIC MEDIA INFO",
+    deprecatedFor: "tagged_media",
   },
   {
     key: "shortcode",
@@ -93,6 +95,16 @@ export const ACCOUNT_MEDIA_FIELD_OPTIONS: MediaFieldOption[] = [
 ];
 
 export const DEFAULT_ACCOUNT_MEDIA_FIELDS = [
+  "id",
+  "media_type",
+  "media_url",
+  "permalink",
+  "timestamp",
+];
+
+// Note: tagged_media endpoint does not support 'username' field
+// See: https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-hashtag/recent-media
+export const DEFAULT_TAGGED_MEDIA_FIELDS = [
   "id",
   "media_type",
   "media_url",

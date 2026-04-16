@@ -25,31 +25,35 @@ export const INSIGHT_METRIC_OPTIONS: InsightMetricOption[] = [
   {
     key: "reach",
     label: "Reach",
-    description: "Unique accounts that saw your content.",
+    description: "The number of unique accounts that have seen your content",
     uiGroup: "ACCOUNT OVERVIEW",
   },
   {
     key: "views",
     label: "Views",
     description: "Total times your content was viewed across surfaces.",
+    
     uiGroup: "ACCOUNT OVERVIEW",
   },
   {
     key: "accounts_engaged",
     label: "Accounts Engaged",
     description: "Unique accounts that interacted with your content.",
+    
     uiGroup: "ACCOUNT OVERVIEW",
   },
   {
     key: "total_interactions",
     label: "Total Interactions",
     description: "Total interactions across posts, stories, reels, and videos.",
+    
     uiGroup: "ACCOUNT OVERVIEW",
   },
   {
     key: "likes",
     label: "Likes",
     description: "Total likes on posts, reels, and videos.",
+    
     uiGroup: "CONTENT ENGAGEMENT",
   },
   {
@@ -86,18 +90,14 @@ export const INSIGHT_METRIC_OPTIONS: InsightMetricOption[] = [
     key: "profile_links_taps",
     label: "Profile Links Taps",
     description: "Taps on profile links and contact actions.",
+    
     uiGroup: "PROFILE ACTIONS",
-  },
-  {
-    key: "follows_and_unfollows",
-    label: "Follows and Unfollows",
-    description: "Follow and unfollow actions in the selected period.",
-    uiGroup: "FOLLOWER GROWTH",
   },
   {
     key: "engaged_audience_demographics",
     label: "Engaged Audience Demographics",
     description: "Demographics of the engaged audience.",
+    
     uiGroup: "AUDIENCE DEMOGRAPHICS",
   },
   {
@@ -164,11 +164,6 @@ const METRIC_RULES: Record<string, MetricRule> = {
     allowedMetricTypes: ["total_value"],
     allowedBreakdowns: ["contact_button_type"],
   },
-  follows_and_unfollows: {
-    group: "interaction",
-    allowedMetricTypes: ["total_value"],
-    allowedBreakdowns: ["follow_type"],
-  },
   engaged_audience_demographics: {
     group: "demographic",
     allowedMetricTypes: ["total_value"],
@@ -182,6 +177,27 @@ const METRIC_RULES: Record<string, MetricRule> = {
 };
 
 const DEFAULT_METRICS = ["reach"];
+
+function normalizeRangeDays(rangeDays: InsightRangeDays): number {
+  if (typeof rangeDays === "number") {
+    return rangeDays;
+  }
+  
+  switch (rangeDays) {
+    case "today":
+      return 1;
+    case "yesterday":
+      return 1;
+    case "this_month":
+      return 30;
+    case "last_month":
+      return 30;
+    case "custom":
+      return 30; // Default for custom
+    default:
+      return 7;
+  }
+}
 
 function uniqueOrdered(items: string[]): string[] {
   const seen = new Set<string>();
@@ -275,14 +291,9 @@ export function resolveInsightRequest(args: {
 
   if (group === "demographic") {
     period = "lifetime";
-    timeframe = args.timeframe ?? (args.rangeDays === 7 ? "this_week" : "this_month");
+    const normalizedDays = normalizeRangeDays(args.rangeDays);
+    timeframe = args.timeframe ?? (normalizedDays <= 7 ? "this_week" : "this_month");
     rangeDays = timeframe === "this_week" ? 7 : 30;
-
-    if (args.period !== "lifetime") {
-      warnings.push("Demographic metrics require period=lifetime. Period was adjusted automatically.");
-    }
-  } else if (args.period !== "day") {
-    warnings.push("Selected metrics support only daily period in v25. Period was adjusted to day.");
   }
 
   const allowedBreakdowns = intersectBreakdowns(effectiveMetrics);

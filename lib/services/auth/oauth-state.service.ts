@@ -4,19 +4,17 @@ import type { NextRequest, NextResponse } from "next/server";
 
 import { AuthError } from "@/lib/core/errors";
 
-type Provider = "notion" | "facebook";
-
 export class OauthStateService {
-  private stateCookie(provider: Provider): string {
+  private stateCookie(provider: string): string {
     return `oauth_state_${provider}`;
   }
 
-  private contextCookie(provider: Provider): string {
+  private contextCookie(provider: string): string {
     return `oauth_ctx_${provider}`;
   }
 
   public issue(
-    provider: Provider,
+    provider: string,
     response: NextResponse,
     context?: Record<string, string>,
   ): string {
@@ -42,7 +40,7 @@ export class OauthStateService {
     return state;
   }
 
-  public consume(provider: Provider, request: NextRequest, state: string | null): {
+  public consume(provider: string, request: NextRequest, state: string | null): {
     context: Record<string, string>;
   } {
     const expected = request.cookies.get(this.stateCookie(provider))?.value;
@@ -57,7 +55,7 @@ export class OauthStateService {
     return { context };
   }
 
-  public clear(provider: Provider, response: NextResponse): void {
+  public clear(provider: string, response: NextResponse): void {
     response.cookies.set(this.stateCookie(provider), "", {
       httpOnly: true,
       sameSite: "lax",

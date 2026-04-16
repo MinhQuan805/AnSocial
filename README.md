@@ -1,7 +1,8 @@
 # Ana Social
 
 Ana Social is a Next.js App Router marketing analytics app with a Notion-like UI.
-It supports Notion OAuth gate, Facebook Business OAuth, insights aggregation,
+It supports Google login, Notion OAuth, Facebook Business OAuth for Instagram,
+insights aggregation,
 Supabase persistence, and n8n workflow JSON export.
 
 ## Stack
@@ -14,7 +15,8 @@ Supabase persistence, and n8n workflow JSON export.
 
 ## Implemented Features
 
-- Notion OAuth gate before entering the analytics console
+- Google OAuth login gate
+- Notion OAuth connection flow after Google login
 - Facebook OAuth flow for account data access
 - Input validation with normalized account IDs
 - Graph API URL preview based on selected filters
@@ -50,7 +52,7 @@ npm install
 3. Create database tables in Supabase:
 
 - Open Supabase SQL Editor
-- Run `supabase/schema.sql`
+- Run `supabase/schema_v2_google_auth.sql`
 
 4. Start dev server:
 
@@ -78,5 +80,5 @@ builds callback URLs from `APP_BASE_URL`.
 ## Security Notes
 
 - Tokens are handled server-side only
-- Session state is stored in HttpOnly cookies
+- Google auth token is stored in HttpOnly cookies
 - n8n export includes credential references, not secret tokens

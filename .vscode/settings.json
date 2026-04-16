@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^\\$path = 'd:\\\\Work\\\\Project Work\\\\ana-social\\\\components\\\\app\\\\console-app\\.tsx'; \\$content = \\[System\\.IO\\.File\\]::ReadAllText\\(\\$path\\); \\$marker = '\\}\"use client\";'; \\$index = \\$content\\.IndexOf\\(\\$marker\\); if \\(\\$index -ge 0\\) \\{ \\$trimmed = \\$content\\.Substring\\(0, \\$index \\+ 1\\); \\$utf8NoBom = New-Object System\\.Text\\.UTF8Encoding\\(\\$false\\); \\[System\\.IO\\.File\\]::WriteAllText\\(\\$path, \\$trimmed, \\$utf8NoBom\\); Write-Output \"Trimmed at duplicate marker\\.\" \\} else \\{ Write-Output \"Marker not found\\.\" \\}$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

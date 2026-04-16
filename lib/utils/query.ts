@@ -73,12 +73,59 @@ export function normalizeAccountInput(value: string): string {
   return value.trim().replace(/^@/, "");
 }
 
-export function unixRangeFromDays(rangeDays: InsightRangeDays): {
+export function unixRangeFromDays(rangeDays: InsightRangeDays, customStartDate?: Date, customEndDate?: Date): {
   sinceUnix: number;
   untilUnix: number;
 } {
-  const untilUnix = Math.floor(Date.now() / 1000);
-  const sinceUnix = untilUnix - rangeDays * 24 * 60 * 60;
+  const untilUnix =
+    customEndDate && !Number.isNaN(customEndDate.getTime())
+      ? Math.floor(customEndDate.getTime() / 1000)
+      : Math.floor(Date.now() / 1000);
+  const today = new Date();
+  
+  let sinceUnix: number;
+
+  if (typeof rangeDays === "number") {
+    sinceUnix = untilUnix - rangeDays * 24 * 60 * 60;
+  } else {
+    switch (rangeDays) {
+      case "today": {
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        sinceUnix = Math.floor(startOfToday.getTime() / 1000);
+        break;
+      }
+      case "yesterday": {
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const startOfYesterday = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+        sinceUnix = Math.floor(startOfYesterday.getTime() / 1000);
+        break;
+      }
+      case "this_month": {
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        sinceUnix = Math.floor(startOfMonth.getTime() / 1000);
+        break;
+      }
+      case "last_month": {
+        const lastMonth = new Date(today);
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+        const startOfLastMonth = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
+        sinceUnix = Math.floor(startOfLastMonth.getTime() / 1000);
+        break;
+      }
+      case "custom": {
+        if (!customStartDate) {
+          sinceUnix = untilUnix - 30 * 24 * 60 * 60; // Default to last 30 days
+        } else {
+          sinceUnix = Math.floor(customStartDate.getTime() / 1000);
+        }
+        break;
+      }
+      default:
+        sinceUnix = untilUnix - 7 * 24 * 60 * 60; // Default to 7 days
+    }
+  }
+
   return { sinceUnix, untilUnix };
 }
 
@@ -90,6 +137,8 @@ export function toGraphQuery(args: {
   mediaFormat: MediaFormatFilter;
   breakdown?: InsightBreakdown;
   timeframe?: InsightTimeframe;
+  customStartDate?: string;
+  customEndDate?: string;
 }): GraphInsightsQuery {
   const resolved = resolveInsightRequest({
     metrics: args.metrics,
@@ -98,7 +147,19 @@ export function toGraphQuery(args: {
     breakdown: args.breakdown,
     timeframe: args.timeframe,
   });
-  const range = unixRangeFromDays(resolved.rangeDays);
+  
+  let customStartDateObj: Date | undefined;
+  let customEndDateObj: Date | undefined;
+  
+  if (args.customStartDate) {
+    customStartDateObj = new Date(args.customStartDate);
+  }
+  
+  if (args.customEndDate) {
+    customEndDateObj = new Date(args.customEndDate);
+  }
+  
+  const range = unixRangeFromDays(resolved.rangeDays, customStartDateObj, customEndDateObj);
 
   return {
     igAccountId: args.igAccountId,

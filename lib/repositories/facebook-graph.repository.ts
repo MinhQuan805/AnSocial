@@ -6,6 +6,7 @@ import {
 } from "@/lib/core/domain";
 import { ExternalApiError } from "@/lib/core/errors";
 import { ApiClient } from "@/lib/infra/http/api-client";
+import { filterFieldsForEndpoint } from "@/lib/insights/filter-media-fields";
 import type { IFacebookGraphRepository } from "@/lib/repositories/interfaces";
 
 interface GraphListResponse<T> {
@@ -68,10 +69,10 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
   public async getAuthenticatedUser(accessToken: string): Promise<{ id: string; name?: string }> {
     const url = new URL(`${this.baseUrl}/me`);
     url.searchParams.set("fields", "id,name");
-    url.searchParams.set("access_token", accessToken);
 
     const payload = await this.client.requestJson<{ id?: string; name?: string }>({
       url: url.toString(),
+      headers: { Authorization: `Bearer ${accessToken}` },
       timeoutMs: 10_000,
       retryCount: 1,
     });
@@ -86,7 +87,10 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
   public async getInstagramAccounts(accessToken: string): Promise<InstagramAccount[]> {
     const url = new URL(`${this.baseUrl}/me/accounts`);
     url.searchParams.set("fields", "id,name,instagram_business_account{id,username}");
-    url.searchParams.set("access_token", accessToken);
+
+    console.log("[FB API] 📡 Calling Graph API: /me/accounts");
+    console.log("[FB API] Token preview:", accessToken.substring(0, 15) + "...");
+    console.log("[FB API] Full URL:", url.toString());
 
     const payload = await this.client.requestJson<
       GraphListResponse<{
@@ -96,9 +100,12 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       }>
     >({
       url: url.toString(),
+      headers: { Authorization: `Bearer ${accessToken}` },
       timeoutMs: 15_000,
       retryCount: 2,
     });
+
+    console.log("[FB API] ✅ Response data:", payload.data?.length ?? 0, "items");
 
     return (payload.data ?? [])
       .flatMap((page) => {
@@ -141,8 +148,6 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       url.searchParams.set("until", String(query.untilUnix));
     }
 
-    url.searchParams.set("access_token", accessToken);
-
     const payload = await this.client.requestJson<
       GraphListResponse<{
         name?: string;
@@ -162,6 +167,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       }>
     >({
       url: url.toString(),
+      headers: { Authorization: `Bearer ${accessToken}` },
       timeoutMs: 20_000,
       retryCount: 2,
     });
@@ -204,13 +210,14 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     accessToken: string;
   }): Promise<Array<Record<string, unknown>>> {
     const path = args.endpoint === "tagged_media" ? "tags" : "media";
+    const supportedFields = filterFieldsForEndpoint(args.fields, args.endpoint);
     const url = new URL(`${this.baseUrl}/${args.igAccountId}/${path}`);
-    url.searchParams.set("fields", args.fields.join(","));
+    url.searchParams.set("fields", supportedFields.join(","));
     url.searchParams.set("limit", String(args.limit));
-    url.searchParams.set("access_token", args.accessToken);
 
     const payload = await this.client.requestJson<GraphListResponse<Record<string, unknown>>>({
       url: url.toString(),
+      headers: { Authorization: `Bearer ${args.accessToken}` },
       timeoutMs: 20_000,
       retryCount: 2,
     });
@@ -218,7 +225,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     return (payload.data ?? []).map((item) => {
       const selected: Record<string, unknown> = {};
 
-      for (const field of args.fields) {
+      for (const field of supportedFields) {
         selected[field] = item[field];
       }
 
@@ -242,7 +249,6 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       "id,media_type,caption,timestamp,like_count,comments_count",
     );
     url.searchParams.set("limit", "50");
-    url.searchParams.set("access_token", accessToken);
 
     const payload = await this.client.requestJson<
       GraphListResponse<{
@@ -255,6 +261,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       }>
     >({
       url: url.toString(),
+      headers: { Authorization: `Bearer ${accessToken}` },
       timeoutMs: 20_000,
       retryCount: 2,
     });
@@ -298,12 +305,12 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     const url = new URL(`${this.baseUrl}/${igAccountId}/insights`);
     url.searchParams.set("metric", "online_followers");
     url.searchParams.set("period", "lifetime");
-    url.searchParams.set("access_token", accessToken);
 
     const payload = await this.client.requestJson<
       GraphListResponse<{ values?: Array<{ value?: Record<string, number> }> }>
     >({
       url: url.toString(),
+      headers: { Authorization: `Bearer ${accessToken}` },
       timeoutMs: 20_000,
       retryCount: 1,
     });
@@ -322,7 +329,6 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     url.searchParams.set("metric_type", "total_value");
     url.searchParams.set("breakdown", "age,gender,country,city");
     url.searchParams.set("timeframe", "this_month");
-    url.searchParams.set("access_token", accessToken);
 
     try {
       const payload = await this.client.requestJson<
@@ -336,6 +342,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
         }>
       >({
         url: url.toString(),
+        headers: { Authorization: `Bearer ${accessToken}` },
         timeoutMs: 20_000,
         retryCount: 1,
       });

@@ -9,8 +9,8 @@ import type {
   MediaFormatFilter,
   TimeSeriesPoint,
 } from "@/lib/core/domain";
-import { AppError, ValidationError } from "@/lib/core/errors";
-import { DEFAULT_ACCOUNT_MEDIA_FIELDS } from "@/lib/insights/media-fields";
+import { AppError, AuthError, ExternalApiError, ValidationError } from "@/lib/core/errors";
+import { DEFAULT_ACCOUNT_MEDIA_FIELDS, DEFAULT_TAGGED_MEDIA_FIELDS } from "@/lib/insights/media-fields";
 import type {
   IFacebookGraphRepository,
   ISupabaseRepository,
@@ -20,6 +20,7 @@ import {
   buildGraphInsightsUrlPreview,
   normalizeAccountInput,
   toGraphQuery,
+  unixRangeFromDays,
 } from "@/lib/utils/query";
 import { freeTextAccountSchema } from "@/lib/validators/input";
 
@@ -30,7 +31,7 @@ export class MarketingInsightsService {
   ) {}
 
   public async generateReport(args: {
-    sessionId: string;
+    userId: string;
     accountInputs: string[];
     selectedAccountIds: string[];
     metrics: string[];
@@ -39,9 +40,11 @@ export class MarketingInsightsService {
     mediaFormat: MediaFormatFilter;
     breakdown?: InsightBreakdown;
     timeframe?: InsightTimeframe;
+    customStartDate?: string;
+    customEndDate?: string;
   }): Promise<MarketingInsightReport> {
     const { token, accountMapById, invalidAccounts, resolvedIds } = await this.resolveAccounts({
-      sessionId: args.sessionId,
+      userId: args.userId,
       accountInputs: args.accountInputs,
       selectedAccountIds: args.selectedAccountIds,
     });
@@ -54,63 +57,80 @@ export class MarketingInsightsService {
       mediaFormat: args.mediaFormat,
       breakdown: args.breakdown,
       timeframe: args.timeframe,
+      customStartDate: args.customStartDate,
+      customEndDate: args.customEndDate,
     });
 
-    const accountReports = await Promise.all(
-      Array.from(resolvedIds).map(async (accountId) => {
-        const query = toGraphQuery({
-          igAccountId: accountId,
-          metrics: args.metrics,
-          period: args.period,
-          rangeDays: args.rangeDays,
-          mediaFormat: args.mediaFormat,
-          breakdown: args.breakdown,
-          timeframe: args.timeframe,
-        });
+    let accountReports: AccountInsightsResult[];
 
-        const metricResults = await this.facebookRepo.getAccountInsights(query, token);
-        const reach = this.metricToSeries(metricResults, "reach");
-        const impressions = this.metricToSeries(metricResults, "impressions");
-        const profileViews = this.metricToSeries(metricResults, "profile_views");
-        const accountsEngaged = this.metricToSeries(metricResults, "accounts_engaged");
-        const demographics = this.extractDemographics(metricResults);
+    try {
+      accountReports = await Promise.all(
+        Array.from(resolvedIds).map(async (accountId) => {
+          const query = toGraphQuery({
+            igAccountId: accountId,
+            metrics: args.metrics,
+            period: args.period,
+            rangeDays: args.rangeDays,
+            mediaFormat: args.mediaFormat,
+            breakdown: args.breakdown,
+            timeframe: args.timeframe,
+            customStartDate: args.customStartDate,
+            customEndDate: args.customEndDate,
+          });
 
-        const fallbackSinceUnix = Math.floor(Date.now() / 1000) - args.rangeDays * 24 * 60 * 60;
-        const media = await this.facebookRepo.getMediaPerformance(
-          accountId,
-          query.sinceUnix ?? fallbackSinceUnix,
-          args.mediaFormat,
-          token,
-        );
-        const onlineFollowers = await this.facebookRepo
-          .getOnlineFollowers(accountId, token)
-          .catch(() => ({}));
+          const metricResults = await this.facebookRepo.getAccountInsights(query, token);
+          const reach = this.metricToSeries(metricResults, "reach");
+          const impressions = this.metricToSeries(metricResults, "impressions");
+          const profileViews = this.metricToSeries(metricResults, "profile_views");
+          const accountsEngaged = this.metricToSeries(metricResults, "accounts_engaged");
+          const demographics = this.extractDemographics(metricResults);
 
-        const reachTotal = reach.reduce((sum, item) => sum + item.value, 0);
-        const engagedTotal = accountsEngaged.reduce((sum, item) => sum + item.value, 0);
-        const engagementRate = reachTotal > 0 ? engagedTotal / reachTotal : 0;
+          const fallbackRange = unixRangeFromDays(args.rangeDays);
+          const media = await this.facebookRepo.getMediaPerformance(
+            accountId,
+            query.sinceUnix ?? fallbackRange.sinceUnix,
+            args.mediaFormat,
+            token,
+          );
+          const onlineFollowers = await this.facebookRepo
+            .getOnlineFollowers(accountId, token)
+            .catch(() => ({}));
 
-        const account = accountMapById.get(accountId);
+          const reachTotal = reach.reduce((sum, item) => sum + item.value, 0);
+          const engagedTotal = accountsEngaged.reduce((sum, item) => sum + item.value, 0);
+          const engagementRate = reachTotal > 0 ? engagedTotal / reachTotal : 0;
 
-        return {
-          accountId,
-          accountHandle: account?.username ?? accountId,
-          reach,
-          impressions,
-          profileViews,
-          accountsEngaged,
-          engagementRate,
-          demographics,
-          metricResults,
-          mediaPerformance: media,
-          recommendations: this.generateRecommendations({
+          const account = accountMapById.get(accountId);
+
+          return {
+            accountId,
+            accountHandle: account?.username ?? accountId,
+            reach,
+            impressions,
+            profileViews,
+            accountsEngaged,
             engagementRate,
-            media,
-            onlineFollowers,
-          }),
-        } satisfies AccountInsightsResult;
-      }),
-    );
+            demographics,
+            metricResults,
+            mediaPerformance: media,
+            recommendations: this.generateRecommendations({
+              engagementRate,
+              media,
+              onlineFollowers,
+            }),
+          } satisfies AccountInsightsResult;
+        }),
+      );
+    } catch (error) {
+      if (
+        error instanceof ExternalApiError &&
+        /OAuthException|Error validating access token|Invalid OAuth/i.test(error.message)
+      ) {
+        throw new AuthError("Facebook token is no longer valid. Please connect again.");
+      }
+
+      throw error;
+    }
 
     const primary = accountReports[0]?.accountId ?? "<ig_account_id>";
 
@@ -145,7 +165,7 @@ export class MarketingInsightsService {
   }
 
   public async generateMediaReport(args: {
-    sessionId: string;
+    userId: string;
     accountInputs: string[];
     selectedAccountIds: string[];
     fields: string[];
@@ -167,7 +187,7 @@ export class MarketingInsightsService {
     generatedAt: string;
   }> {
     const { token, accountMapById, invalidAccounts, resolvedIds } = await this.resolveAccounts({
-      sessionId: args.sessionId,
+      userId: args.userId,
       accountInputs: args.accountInputs,
       selectedAccountIds: args.selectedAccountIds,
     });
@@ -175,25 +195,46 @@ export class MarketingInsightsService {
     const fields = Array.from(
       new Set(args.fields.map((item) => item.trim()).filter((item) => item.length > 0)),
     );
-    const selectedFields = fields.length > 0 ? fields : DEFAULT_ACCOUNT_MEDIA_FIELDS;
+    const selectedFields = fields.length > 0 
+      ? fields 
+      : args.endpoint === "tagged_media" 
+        ? DEFAULT_TAGGED_MEDIA_FIELDS 
+        : DEFAULT_ACCOUNT_MEDIA_FIELDS;
 
-    const accounts = await Promise.all(
-      Array.from(resolvedIds).map(async (accountId) => {
-        const items = await this.facebookRepo.getAccountMedia({
-          igAccountId: accountId,
-          fields: selectedFields,
-          limit: args.limit,
-          endpoint: args.endpoint,
-          accessToken: token,
-        });
+    let accounts: Array<{
+      accountId: string;
+      accountHandle: string;
+      items: Array<Record<string, unknown>>;
+    }>;
 
-        return {
-          accountId,
-          accountHandle: accountMapById.get(accountId)?.username ?? accountId,
-          items,
-        };
-      }),
-    );
+    try {
+      accounts = await Promise.all(
+        Array.from(resolvedIds).map(async (accountId) => {
+          const items = await this.facebookRepo.getAccountMedia({
+            igAccountId: accountId,
+            fields: selectedFields,
+            limit: args.limit,
+            endpoint: args.endpoint,
+            accessToken: token,
+          });
+
+          return {
+            accountId,
+            accountHandle: accountMapById.get(accountId)?.username ?? accountId,
+            items,
+          };
+        }),
+      );
+    } catch (error) {
+      if (
+        error instanceof ExternalApiError &&
+        /OAuthException|Error validating access token|Invalid OAuth/i.test(error.message)
+      ) {
+        throw new AuthError("Facebook token is no longer valid. Please connect again.");
+      }
+
+      throw error;
+    }
 
     const primary = accounts[0]?.accountId ?? "<ig_account_id>";
 
@@ -216,7 +257,7 @@ export class MarketingInsightsService {
   }
 
   private async resolveAccounts(args: {
-    sessionId: string;
+    userId: string;
     accountInputs: string[];
     selectedAccountIds: string[];
   }): Promise<{
@@ -225,18 +266,41 @@ export class MarketingInsightsService {
     invalidAccounts: string[];
     resolvedIds: Set<string>;
   }> {
-    const integration = await this.supabaseRepo.getIntegration(args.sessionId);
+    const facebookIntegration = await this.supabaseRepo.getFacebookIntegration(args.userId);
 
-    if (!integration?.facebookAccessToken) {
+    if (!facebookIntegration?.accessToken) {
       throw new AppError(
         "FACEBOOK_NOT_CONNECTED",
-        "Facebook Business OAuth is required before fetching insights.",
+        "Instagram/Facebook OAuth is required before fetching insights.",
         401,
       );
     }
 
-    const token = integration.facebookAccessToken;
-    const accounts = await this.facebookRepo.getInstagramAccounts(token);
+    console.log("[Check] ✅ ACCESS TOKEN EXISTS - Length:", facebookIntegration.accessToken.length);
+    console.log("[Check] Token expiry:", facebookIntegration.tokenExpiresAt);
+
+    if (
+      facebookIntegration.tokenExpiresAt &&
+      new Date(facebookIntegration.tokenExpiresAt).getTime() <= Date.now()
+    ) {
+      throw new AuthError("Facebook token expired. Please reconnect from Authorization tab.");
+    }
+
+    const token = facebookIntegration.accessToken;
+    let accounts: InstagramAccount[];
+
+    try {
+      accounts = await this.facebookRepo.getInstagramAccounts(token);
+    } catch (error) {
+      if (
+        error instanceof ExternalApiError &&
+        /OAuthException|Error validating access token|Invalid OAuth/i.test(error.message)
+      ) {
+        throw new AuthError("Facebook token is no longer valid. Please connect again.");
+      }
+
+      throw error;
+    }
     const accountMapById = new Map(accounts.map((account) => [account.id, account]));
     const accountMapByUsername = new Map(accounts.map((account) => [account.username.toLowerCase(), account]));
     const cleaned = args.accountInputs.map((item) => item.trim()).filter((item) => item.length > 0);
@@ -269,6 +333,10 @@ export class MarketingInsightsService {
       if (accountMapById.has(accountId)) {
         resolvedIds.add(accountId);
       }
+    }
+
+    if (resolvedIds.size === 0 && accounts[0]) {
+      resolvedIds.add(accounts[0].id);
     }
 
     if (resolvedIds.size === 0) {
