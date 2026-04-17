@@ -39,7 +39,7 @@ interface HttpRequestCardProps {
   isOAuthMode: boolean;
   editableUrl: string;
   setEditableUrl: (value: string) => void;
-  syncFromUrlInputInstagram: () => void;
+  syncFromUrlInput: () => void;
   requestParameterRows: RequestParameterRow[];
   parameterDrafts: Record<string, string>;
   setParameterDrafts: (value: Record<string, string>) => void;
@@ -105,7 +105,7 @@ export function HttpRequestCard({
   isOAuthMode,
   editableUrl,
   setEditableUrl,
-  syncFromUrlInputInstagram,
+  syncFromUrlInput,
   requestParameterRows,
   parameterDrafts,
   setParameterDrafts,
@@ -180,11 +180,11 @@ export function HttpRequestCard({
               onChange={(event) => {
                 setEditableUrl(event.target.value);
               }}
-              onBlur={syncFromUrlInputInstagram}
+              onBlur={syncFromUrlInput}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault();
-                  syncFromUrlInputInstagram();
+                  syncFromUrlInput();
                 }
               }}
               className="h-11"
@@ -332,11 +332,11 @@ export function HttpRequestCard({
 
           <TabsContent value="body" className="mt-0 space-y-3 px-3 py-3">
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant={bodyMode === "json" ? "default" : "outline"} onClick={() => setBodyMode("json")}>JSON</Button>
-              <Button type="button" size="sm" variant={bodyMode === "form-data" ? "default" : "outline"} onClick={() => setBodyMode("form-data")}>form-data</Button>
+              <Button type="button" size="lg" variant={bodyMode === "json" ? "default" : "outline"} onClick={() => setBodyMode("json")}>JSON</Button>
+              <Button type="button" size="lg" variant={bodyMode === "form-data" ? "default" : "outline"} onClick={() => setBodyMode("form-data")}>form-data</Button>
               <Button
                 type="button"
-                size="sm"
+                size="lg"
                 variant={bodyMode === "x-www-form-urlencoded" ? "default" : "outline"}
                 onClick={() => setBodyMode("x-www-form-urlencoded")}
               >
