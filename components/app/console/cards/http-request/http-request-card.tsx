@@ -1,5 +1,6 @@
 "use client";
 
+import type { DragEvent } from "react";
 import {
   CheckCircle2,
   CircleAlert,
@@ -13,7 +14,9 @@ import {
 
 import { SingleSelectDropdownField, type SingleSelectDropdownOption } from "@/components/app/console/forms/single-select-dropdown-field";
 import { IntegrationPanel } from "@/components/app/console/forms/integration-panel";
-import type { RequestParameterRow, SessionView, InsightReport, MediaReport, HttpRequestReport, AutoScheduleSettings } from "@/components/app/console/types";
+import type { RequestParameterRow, SessionView, InsightReport, MediaReport, HttpRequestReport } from "@/components/app/console/types";
+import type { AutoScheduleSettings } from "@/lib/core/domain";
+import { getMappingExpressionData, insertTextAtSelection } from "@/lib/utils/json-mapping";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,6 +69,10 @@ interface HttpRequestCardProps {
   hasOAuthConnection: boolean;
   bearerToken: string;
   setBearerToken: (value: string) => void;
+  basicUsername: string;
+  setBasicUsername: (value: string) => void;
+  basicPassword: string;
+  setBasicPassword: (value: string) => void;
   running: boolean;
   runAnalysis: () => void;
   saving: boolean;
@@ -132,6 +139,10 @@ export function HttpRequestCard({
   hasOAuthConnection,
   bearerToken,
   setBearerToken,
+  basicUsername,
+  setBasicUsername,
+  basicPassword,
+  setBasicPassword,
   running,
   runAnalysis,
   saving,
@@ -158,6 +169,31 @@ export function HttpRequestCard({
   saveResult,
   exportN8n,
 }: HttpRequestCardProps) {
+  const allowMappingDrop = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+  };
+
+  const dropMappedExpression = (
+    event: DragEvent<HTMLInputElement | HTMLTextAreaElement>,
+    currentValue: string,
+    onChangeValue: (value: string) => void,
+  ) => {
+    event.preventDefault();
+    const expression = getMappingExpressionData(event.dataTransfer);
+    if (!expression) {
+      return;
+    }
+
+    const nextValue = insertTextAtSelection(
+      currentValue,
+      expression,
+      event.currentTarget.selectionStart,
+      event.currentTarget.selectionEnd,
+    );
+
+    onChangeValue(nextValue);
+  };
+
   return (
     <Card className="border-border/80">
       <CardHeader>
@@ -218,6 +254,15 @@ export function HttpRequestCard({
                       [item.key]: event.target.value,
                     })
                   }
+                  onDragOver={allowMappingDrop}
+                  onDrop={(event) =>
+                    dropMappedExpression(event, parameterDrafts[item.key] ?? item.value, (nextValue) =>
+                      setParameterDrafts({
+                        ...parameterDrafts,
+                        [item.key]: nextValue,
+                      }),
+                    )
+                  }
                   onBlur={() => commitParameterDraft(item.key)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -251,6 +296,8 @@ export function HttpRequestCard({
                 onChange={(event) => setNewParamValue(event.target.value)}
                 placeholder="Value"
                 className="h-10"
+                onDragOver={allowMappingDrop}
+                onDrop={(event) => dropMappedExpression(event, newParamValue, setNewParamValue)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
@@ -305,6 +352,8 @@ export function HttpRequestCard({
                 onChange={(event) => setNewHeaderValue(event.target.value)}
                 placeholder="Value"
                 className="h-10"
+                onDragOver={allowMappingDrop}
+                onDrop={(event) => dropMappedExpression(event, newHeaderValue, setNewHeaderValue)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
@@ -346,19 +395,21 @@ export function HttpRequestCard({
             {requestMethod === "GET" ? (
               <Textarea
                 readOnly
-                value="GET request does not include a request body."
-                className="min-h-20 resize-none bg-muted/40 text-sm"
+                placeholder="GET request does not include a request body."
+                className="min-h-20 resize-none text-sm"
               />
             ) : isOAuthMode ? (
               <Textarea
                 readOnly
-                value="OAuth mode uses managed payloads. Switch to token/basic mode to edit body freely."
-                className="min-h-20 resize-none bg-muted/40 text-sm"
+                placeholder="OAuth mode uses managed payloads. Switch to token/basic mode to edit body freely."
+                className="min-h-20 resize-none text-sm"
               />
             ) : (
               <Textarea
                 value={requestBody}
                 onChange={(event) => setRequestBody(event.target.value)}
+                onDragOver={allowMappingDrop}
+                onDrop={(event) => dropMappedExpression(event, requestBody, setRequestBody)}
                 placeholder={bodyMode === "json" ? "{\n  \"key\": \"value\"\n}" : "key=value"}
                 className="min-h-32 text-sm"
               />
@@ -367,9 +418,9 @@ export function HttpRequestCard({
 
           <TabsContent value="authorization" className="mt-0 space-y-3 px-3 py-3">
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant={authMode === "oauth" ? "default" : "outline"} onClick={() => setAuthMode("oauth")}>OAuth</Button>
-              <Button type="button" size="sm" variant={authMode === "token" ? "default" : "outline"} onClick={() => setAuthMode("token")}>Token</Button>
-              <Button type="button" size="sm" variant={authMode === "basic" ? "default" : "outline"} onClick={() => setAuthMode("basic")}>Basic</Button>
+              <Button type="button" size="lg" variant={authMode === "oauth" ? "default" : "outline"} onClick={() => setAuthMode("oauth")}>OAuth</Button>
+              <Button type="button" size="lg" variant={authMode === "token" ? "default" : "outline"} onClick={() => setAuthMode("token")}>Token</Button>
+              <Button type="button" size="lg" variant={authMode === "basic" ? "default" : "outline"} onClick={() => setAuthMode("basic")}>Basic</Button>
             </div>
 
             {authMode === "oauth" ? (
@@ -381,19 +432,41 @@ export function HttpRequestCard({
             ) : null}
 
             {authMode === "token" ? (
-              <Alert className="border-border bg-muted/30 text-foreground">
-                <AlertTitle>Token Authentication</AlertTitle>
+              <Alert className="border-border text-foreground">
+                <p className="font-bold text-lg">Token Authentication</p>
                 <Input
                   value={bearerToken}
                   placeholder="Enter access token (Bearer prefix is optional)"
                   onChange={(event) => setBearerToken(event.target.value)}
+                  onDragOver={allowMappingDrop}
+                  onDrop={(event) => dropMappedExpression(event, bearerToken, setBearerToken)}
+                  className="h-10 mt-2"
                 />
               </Alert>
             ) : null}
 
             {authMode === "basic" ? (
-              <Alert className="border-border bg-muted/30 text-foreground">
-                <AlertTitle>Basic mode</AlertTitle>
+              <Alert className="border-border text-foreground">
+                <p className="font-bold text-lg">Basic Authentication</p>
+                <AlertDescription className="space-y-2">
+                  <Input
+                    value={basicUsername}
+                    placeholder="Username"
+                    onChange={(event) => setBasicUsername(event.target.value)}
+                    onDragOver={allowMappingDrop}
+                    onDrop={(event) => dropMappedExpression(event, basicUsername, setBasicUsername)}
+                    className="h-10 mt-2"
+                  />
+                  <Input
+                    value={basicPassword}
+                    type="password"
+                    placeholder="Password"
+                    onChange={(event) => setBasicPassword(event.target.value)}
+                    onDragOver={allowMappingDrop}
+                    onDrop={(event) => dropMappedExpression(event, basicPassword, setBasicPassword)}
+                    className="h-10"
+                  />
+                </AlertDescription>
               </Alert>
             ) : null}
           </TabsContent>

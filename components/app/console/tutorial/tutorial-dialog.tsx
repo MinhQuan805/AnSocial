@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import type { ExtendedRecordMap } from "notion-types";
+import { NotionRenderer } from "react-notion-x";
+import { toast } from "react-toastify";
 
 import {
   Dialog,
@@ -12,15 +13,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  TUTORIAL_NOTION_URLS,
+  TUTORIAL_OPTIONS,
+  type TutorialSlug,
+} from "@/lib/config/notion-guides";
+import { fetchPublicNotionPage } from "@/lib/notion/load-public-page";
 
-type TutorialSlug = "instagram" | "facebook" | "tiktok" | "youtube";
-
-const TUTORIAL_OPTIONS: Array<{ slug: TutorialSlug; label: string }> = [
-  { slug: "instagram", label: "Instagram" },
-  { slug: "facebook", label: "Facebook" },
-  { slug: "tiktok", label: "TikTok" },
-  { slug: "youtube", label: "YouTube" },
-];
+const NOT_CONFIGURED_MESSAGE =
+  "This tutorial has not been configured with a public Notion page URL yet.";
 
 interface TutorialDialogProps {
   open: boolean;
@@ -29,26 +30,45 @@ interface TutorialDialogProps {
 
 export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
   const [activeTutorial, setActiveTutorial] = useState<TutorialSlug>("instagram");
-  const [content, setContent] = useState<string>("Loading tutorial...");
+  const [recordMap, setRecordMap] = useState<ExtendedRecordMap | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<string>(NOT_CONFIGURED_MESSAGE);
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
+    const notionTarget = TUTORIAL_NOTION_URLS[activeTutorial]?.trim() ?? "";
+    if (!notionTarget) {
+      setRecordMap(null);
+      setMessage(NOT_CONFIGURED_MESSAGE);
+      return;
+    }
+
     let cancelled = false;
+    const controller = new AbortController();
+    setLoading(true);
 
     const load = async () => {
       try {
-        const response = await fetch(`/tutorials/${activeTutorial}.md`);
-        const markdown = await response.text();
+        const page = await fetchPublicNotionPage(notionTarget, controller.signal);
 
         if (!cancelled) {
-          setContent(markdown);
+          setRecordMap(page.recordMap);
+          setMessage("");
         }
       } catch {
         if (!cancelled) {
-          setContent("# Tutorial unavailable\n\nUnable to load this tutorial file.");
+          setRecordMap(null);
+          setMessage(
+            "Unable to load this tutorial from Notion. Make sure the page exists and is public.",
+          );
+          toast.error("Unable to load tutorial from Notion.");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
         }
       }
     };
@@ -57,6 +77,7 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [activeTutorial, open]);
 
@@ -66,7 +87,7 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
         <DialogHeader>
           <DialogTitle>Product Tutorials</DialogTitle>
           <DialogDescription>
-            Tutorials are loaded from markdown files in public/tutorials.
+            Tutorials are loaded directly from public Notion pages.
           </DialogDescription>
         </DialogHeader>
 
@@ -85,9 +106,13 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
         </div>
 
         <div className="mt-2 overflow-auto rounded-lg border border-border bg-muted/20 p-4 text-sm">
-          <article className="space-y-3 leading-relaxed text-foreground">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-          </article>
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading Notion tutorial...</p>
+          ) : recordMap ? (
+            <NotionRenderer recordMap={recordMap} fullPage={false} darkMode={false} />
+          ) : (
+            <p className="text-sm text-muted-foreground">{message}</p>
+          )}
         </div>
       </DialogContent>
     </Dialog>

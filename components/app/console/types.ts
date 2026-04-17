@@ -6,6 +6,8 @@ import type {
 } from "@/lib/core/domain";
 import type { EndpointId, IdType } from "@/lib/insights/endpoint-registry";
 
+export type { AutoScheduleSettings };
+
 export type SessionView = {
   sessionId?: string | null;
   notionWorkspaceName: string | null;
@@ -85,6 +87,7 @@ export type HttpRequestReport = {
     url: string;
     method: string;
     headers: Record<string, string>;
+    params?: Array<{ key: string; value: string }>;
     body?: string;
   };
   response: {

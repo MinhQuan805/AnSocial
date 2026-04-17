@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "react-toastify";
 
 interface CreateNotionPageDialogProps {
   open: boolean;
@@ -55,10 +56,13 @@ export function CreateNotionPageDialog({
 
       const page = await response.json();
       onPageCreated(page);
+      toast.success(`Notion page \"${page.title}\" created successfully.`);
       setPageName("");
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create page");
+      const message = err instanceof Error ? err.message : "Failed to create page";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

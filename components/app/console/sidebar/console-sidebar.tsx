@@ -1,29 +1,26 @@
 "use client";
 
-import {
-  BookOpenText,
-  Camera,
-  ExternalLink,
-  LoaderCircle,
-  LogOut,
-  Plus,
-  Workflow,
-} from "lucide-react";
+import { useMemo } from "react";
+import { Command } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-  SidebarSeparator,
 } from "@/components/ui/sidebar";
+import {
+  buildConsoleSidebarNavGroups,
+  buildConsoleSidebarUser,
+} from "@/components/app/console/sidebar/data/sidebar-data";
+import { ConsoleNavGroup } from "@/components/app/console/sidebar/nav-group";
+import { ConsoleNavUser } from "@/components/app/console/sidebar/nav-user";
+import type { ConsoleSidebarAction } from "@/components/app/console/sidebar/types";
 
 interface ConsoleSidebarProps {
   notionWorkspaceName: string | null;
@@ -42,69 +39,62 @@ export function ConsoleSidebar({
   onOpenTutorial,
   onLogout,
 }: ConsoleSidebarProps) {
+  const pathname = usePathname();
+
+  const navGroups = useMemo(() => buildConsoleSidebarNavGroups(), []);
+  const user = useMemo(
+    () => buildConsoleSidebarUser(notionWorkspaceName),
+    [notionWorkspaceName],
+  );
+
+  const handleAction = (action: ConsoleSidebarAction) => {
+    if (action === "new-request") {
+      onNewRequest();
+      return;
+    }
+
+    onOpenTutorial();
+  };
+
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader>
-        <div className="flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar-accent/55 px-3 py-2">
-          <div className="flex size-8 items-center justify-center rounded-md bg-gradient-to-br from-fuchsia-500 via-pink-500 to-orange-400 text-white">
-            <Camera className="size-4" />
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold">Note API Connector</p>
-            <p className="truncate text-xs text-muted-foreground">Instagram workspace</p>
-          </div>
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={onNewRequest} tooltip="Create a new request" isActive>
-                  <Plus />
-                  <span>New request</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Open provider debug endpoint">
-                  <a href="/api/providers" target="_blank" rel="noreferrer">
-                    <ExternalLink />
-                    <span>Integrations</span>
-                  </a>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={onOpenTutorial} tooltip="Open markdown tutorial">
-                  <BookOpenText />
-                  <span>Tutorial</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-      </SidebarContent>
-
-      <SidebarFooter>
-        <div className="rounded-md border border-sidebar-border bg-sidebar-accent/50 px-3 py-2 text-sm">
-          <p className="truncate font-medium">{notionWorkspaceName ?? "Notion workspace"}</p>
-          <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-            <Workflow className="size-3.5" />
-            {remainingFreeSaves} free saves left
-          </p>
-        </div>
-
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={onLogout} disabled={loggingOut} tooltip="Reset current session">
-              {loggingOut ? <LoaderCircle className="animate-spin" /> : <LogOut />}
-              <span>Reset session</span>
+            <SidebarMenuButton
+              size="lg"
+              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+            >
+              <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                <Command />
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">Note API Connector</span>
+                <span className="truncate text-xs text-muted-foreground">Next + shadcn/ui</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        {navGroups.map((group) => (
+          <ConsoleNavGroup
+            key={group.title}
+            group={group}
+            pathname={pathname}
+            onAction={handleAction}
+          />
+        ))}
+      </SidebarContent>
+
+      <SidebarFooter>
+        <ConsoleNavUser
+          user={user}
+          remainingFreeSaves={remainingFreeSaves}
+          loggingOut={loggingOut}
+          onLogout={onLogout}
+        />
       </SidebarFooter>
 
       <SidebarRail />

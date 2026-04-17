@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "react-toastify";
 
 interface CreateNotionDatabaseDialogProps {
   open: boolean;
@@ -63,10 +64,13 @@ export function CreateNotionDatabaseDialog({
 
       const database = await response.json();
       onDatabaseCreated(database);
+      toast.success(`Notion database \"${database.title}\" created successfully.`);
       setDatabaseName("");
       onOpenChange(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create database");
+      const message = err instanceof Error ? err.message : "Failed to create database";
+      setError(message);
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

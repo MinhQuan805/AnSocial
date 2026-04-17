@@ -8,6 +8,14 @@ const requestSchema = z.object({
   url: z.string().min(1),
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]).default("GET"),
   headers: z.record(z.string(), z.string()).default({}),
+  params: z
+    .array(
+      z.object({
+        key: z.string().trim().min(1),
+        value: z.string().default(""),
+      }),
+    )
+    .default([]),
   body: z.string().optional(),
 });
 
@@ -77,6 +85,13 @@ export async function POST(request: NextRequest) {
       throw new ValidationError("Only http:// or https:// URLs are supported.");
     }
 
+    if (payload.params.length > 0) {
+      targetUrl.search = "";
+      for (const parameter of payload.params) {
+        targetUrl.searchParams.set(parameter.key.trim(), parameter.value);
+      }
+    }
+
     const outboundHeaders = sanitizeHeaders(payload.headers);
     const includeBody = shouldSendBody(payload.method);
 
@@ -99,6 +114,7 @@ export async function POST(request: NextRequest) {
         url: targetUrl.toString(),
         method: payload.method,
         headers: outboundHeaders,
+        params: Array.from(targetUrl.searchParams.entries()).map(([key, value]) => ({ key, value })),
         body: includeBody ? payload.body : undefined,
       },
       response: {

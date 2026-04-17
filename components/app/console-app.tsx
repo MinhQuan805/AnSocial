@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Info } from "lucide-react";
+import { toast } from "react-toastify";
 
 import { HttpRequestCard } from "@/components/app/console/cards/http-request/http-request-card";
 import { InstagramBuilderSection } from "@/components/app/console/integrations/instagram/instagram-builder-section";
@@ -48,6 +49,18 @@ function sanitizeSingleUrlInput(raw: string): string {
   return firstToken ?? "";
 }
 
+function encodeBasicAuthValue(value: string): string {
+  if (typeof window === "undefined" || typeof window.btoa !== "function") {
+    return "";
+  }
+
+  const utf8 = encodeURIComponent(value).replace(/%([0-9A-F]{2})/g, (_, hex: string) =>
+    String.fromCharCode(Number.parseInt(hex, 16)),
+  );
+
+  return window.btoa(utf8);
+}
+
 export function ConsoleApp({ session }: ConsoleAppProps) {
   const [availableNotionPages, setAvailableNotionPages] = useState(session.notionPages);
   const [availableNotionDatabases, setAvailableNotionDatabases] = useState(session.notionDatabases);
@@ -75,6 +88,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
   const [newHeaderKey, setNewHeaderKey] = useState("");
   const [newHeaderValue, setNewHeaderValue] = useState("");
   const [bearerToken, setBearerToken] = useState("");
+  const [basicUsername, setBasicUsername] = useState("");
+  const [basicPassword, setBasicPassword] = useState("");
 
   const [loggingOut, setLoggingOut] = useState(false);
   const [running, setRunning] = useState(false);
@@ -85,6 +100,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
   const [httpReport, setHttpReport] = useState<HttpRequestReport | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const lastStatusToastRef = useRef<string | null>(null);
+  const lastErrorToastRef = useRef<string | null>(null);
 
   const instagram = useInstagramIntegration({
     session,
@@ -127,6 +144,34 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       sessionStorage.setItem("ana_session_id", serverSessionId);
     }
   }, [session.sessionId]);
+
+  useEffect(() => {
+    if (!status) {
+      lastStatusToastRef.current = null;
+      return;
+    }
+
+    if (lastStatusToastRef.current === status) {
+      return;
+    }
+
+    lastStatusToastRef.current = status;
+    toast.success(status);
+  }, [status]);
+
+  useEffect(() => {
+    if (!error) {
+      lastErrorToastRef.current = null;
+      return;
+    }
+
+    if (lastErrorToastRef.current === error) {
+      return;
+    }
+
+    lastErrorToastRef.current = error;
+    toast.error(error);
+  }, [error]);
 
   useEffect(() => {
     if (!instagram.hasOAuthConnection && authMode === "oauth") {
@@ -326,13 +371,29 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       }
     }
 
-    if (requestMethod !== "GET" && requestMethod !== "DELETE" && requestBody.trim()) {
+    if (authMode === "basic") {
+      const username = basicUsername.trim();
+      const password = basicPassword;
+
+      if (username || password) {
+        const encoded = encodeBasicAuthValue(`${username}:${password}`);
+        if (encoded) {
+          headerMap.Authorization = `Basic ${encoded}`;
+        }
+      }
+    }
+
+    if (requestMethod !== "GET" && requestBody.trim()) {
       const hasContentType = Object.keys(headerMap).some(
         (key) => key.toLowerCase() === "content-type",
       );
 
       if (!hasContentType) {
-        headerMap["Content-Type"] = "application/json";
+        if (bodyMode === "x-www-form-urlencoded") {
+          headerMap["Content-Type"] = "application/x-www-form-urlencoded";
+        } else if (bodyMode === "json") {
+          headerMap["Content-Type"] = "application/json";
+        }
       }
     }
 
@@ -363,6 +424,20 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       throw new Error("Only http:// and https:// URLs are supported.");
     }
 
+    const queryParameters = instagram.requestParameterRows
+      .map((row) => ({
+        key: row.key.trim(),
+        value: (instagram.parameterDrafts[row.key] ?? row.value).trim(),
+      }))
+      .filter((row) => row.key.length > 0);
+
+    if (queryParameters.length > 0) {
+      targetUrl.search = "";
+      for (const parameter of queryParameters) {
+        targetUrl.searchParams.set(parameter.key, parameter.value);
+      }
+    }
+
     const outgoingHeaders = buildHttpHeaders();
     const includeBody = requestMethod !== "GET";
 
@@ -372,7 +447,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
         url: targetUrl.toString(),
         method: requestMethod,
         headers: outgoingHeaders,
-        body: includeBody ? requestBody : undefined,
+        params: queryParameters,
+        body: includeBody && requestBody.trim().length > 0 ? requestBody : undefined,
       }),
     });
 
@@ -641,6 +717,10 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
               hasOAuthConnection={instagram.hasOAuthConnection}
               bearerToken={bearerToken}
               setBearerToken={setBearerToken}
+              basicUsername={basicUsername}
+              setBasicUsername={setBasicUsername}
+              basicPassword={basicPassword}
+              setBasicPassword={setBasicPassword}
               running={running}
               runAnalysis={runAnalysis}
               saving={saving}

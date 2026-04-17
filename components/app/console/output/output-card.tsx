@@ -1,10 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
 import { CircleAlert } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,6 +16,11 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { HttpRequestReport, InsightReport, MediaReport } from "@/components/app/console/types";
+import {
+  type JsonMappingField,
+  extractJsonMappingFields,
+  setMappingExpressionData,
+} from "@/lib/utils/json-mapping";
 
 interface OutputCardProps {
   isHttpMode: boolean;
@@ -30,6 +36,50 @@ interface OutputCardProps {
     item: Record<string, unknown>;
   }>;
   formatMediaCellValue: (value: unknown) => string;
+}
+
+interface RawPayloadWithMappingProps {
+  payloadText: string;
+  mappingFields: JsonMappingField[];
+}
+
+function RawPayloadWithMapping({ payloadText, mappingFields }: RawPayloadWithMappingProps) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
+      <aside className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-50 p-3">
+        <p className="text-xs font-semibold text-zinc-700">Drag fields to map values</p>
+        <p className="mt-1 text-xs text-zinc-500">Drop into Parameters, Headers, Body, Token, or Basic auth inputs.</p>
+        <div className="mt-3 grid gap-2">
+          {mappingFields.length === 0 ? (
+            <p className="rounded-md border border-dashed border-zinc-300 bg-white px-2 py-2 text-xs text-zinc-500">
+              No primitive JSON field found to map.
+            </p>
+          ) : (
+            mappingFields.map((field) => (
+              <button
+                key={field.label}
+                type="button"
+                draggable
+                onDragStart={(event) => {
+                  setMappingExpressionData(event.dataTransfer, field.expression);
+                  event.dataTransfer.effectAllowed = "copy";
+                }}
+                className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-left text-xs transition hover:border-zinc-400 hover:bg-zinc-100 active:cursor-grabbing"
+                title={field.expression}
+              >
+                <p className="truncate font-mono text-[11px] text-zinc-900">{field.label}</p>
+                <p className="truncate text-[11px] text-zinc-500">{field.sample}</p>
+              </button>
+            ))
+          )}
+        </div>
+      </aside>
+
+      <pre className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-950 p-4 text-xs text-zinc-100 whitespace-pre-wrap break-all">
+        {payloadText}
+      </pre>
+    </div>
+  );
 }
 
 export function OutputCard({
@@ -76,6 +126,14 @@ export function OutputCard({
     }
   };
 
+  const httpMappingFields = useMemo(
+    () => extractJsonMappingFields(httpReport?.response.data),
+    [httpReport?.response.data],
+  );
+
+  const insightMappingFields = useMemo(() => extractJsonMappingFields(insightReport), [insightReport]);
+  const mediaMappingFields = useMemo(() => extractJsonMappingFields(mediaReport), [mediaReport]);
+
   return (
     <Card className="border-border/80">
       <CardHeader>
@@ -110,6 +168,14 @@ export function OutputCard({
                   <p className="text-xs text-zinc-500">Request URL</p>
                   <p className="break-all font-mono text-xs text-zinc-900">{httpReport.request.url}</p>
                 </div>
+                {(httpReport.request.params?.length ?? 0) > 0 ? (
+                  <div>
+                    <p className="text-xs text-zinc-500">Query Parameters</p>
+                    <p className="break-all font-mono text-xs text-zinc-900">
+                      {httpReport.request.params?.map((item) => `${item.key}=${item.value}`).join("&")}
+                    </p>
+                  </div>
+                ) : null}
                 <div>
                   <p className="text-xs text-zinc-500">Response Time</p>
                   <p className="text-xs text-zinc-900">{formatDateTime(httpReport.generatedAt)}</p>
@@ -118,9 +184,10 @@ export function OutputCard({
             </TabsContent>
 
             <TabsContent value="raw">
-              <pre className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-950 p-4 text-xs text-zinc-100">
-                {formatHttpPayload(httpReport.response.data)}
-              </pre>
+              <RawPayloadWithMapping
+                payloadText={formatHttpPayload(httpReport.response.data)}
+                mappingFields={httpMappingFields}
+              />
             </TabsContent>
           </Tabs>
         ) : isInsightEndpoint && !insightReport ? (
@@ -233,9 +300,10 @@ export function OutputCard({
             </TabsContent>
 
             <TabsContent value="raw">
-              <pre className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-950 p-4 text-xs text-zinc-100">
-                {JSON.stringify(insightReport, null, 2)}
-              </pre>
+              <RawPayloadWithMapping
+                payloadText={JSON.stringify(insightReport, null, 2)}
+                mappingFields={insightMappingFields}
+              />
             </TabsContent>
           </Tabs>
         ) : isMediaEndpoint && mediaReport ? (
@@ -292,9 +360,10 @@ export function OutputCard({
             </TabsContent>
 
             <TabsContent value="raw">
-              <pre className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-950 p-4 text-xs text-zinc-100">
-                {JSON.stringify(mediaReport, null, 2)}
-              </pre>
+              <RawPayloadWithMapping
+                payloadText={JSON.stringify(mediaReport, null, 2)}
+                mappingFields={mediaMappingFields}
+              />
             </TabsContent>
           </Tabs>
         ) : (

@@ -14,7 +14,10 @@ import {
   METRIC_OPTIONS,
   TIMEFRAME_OPTIONS,
 } from "@/components/app/console/constants";
-import { MultiSelectDropdownField } from "@/components/app/console/forms/multi-select-dropdown-field";
+import {
+  MultiSelectDropdownField,
+  type SelectOption,
+} from "@/components/app/console/forms/multi-select-dropdown-field";
 import {
   SingleSelectDropdownField,
   type SingleSelectDropdownOption,
@@ -70,7 +73,7 @@ interface InstagramBuilderCardProps {
   isMediaEndpoint: boolean;
   metrics: string[];
   setMetrics: (value: string[]) => void;
-  activeMetricOptions: Array<{ key: string; label: string }>;
+  activeMetricOptions: SelectOption[];
   period: InsightPeriod;
   setPeriod: (value: InsightPeriod) => void;
   timeframe: InsightTimeframe;
@@ -100,7 +103,7 @@ interface InstagramBuilderCardProps {
   setMediaFields: (value: string[]) => void;
   mediaLimit: number;
   setMediaLimit: (value: number) => void;
-  activeFieldOptions: Array<{ key: string; label: string }>;
+  activeFieldOptions: SelectOption[];
   periodDropdownOptions: SingleSelectDropdownOption[];
   timeframeDropdownOptions: SingleSelectDropdownOption[];
   breakdownDropdownOptions: SingleSelectDropdownOption[];

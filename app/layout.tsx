@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Manrope, Geist } from "next/font/google";
 import "./globals.css";
+import "react-notion-x/src/styles.css";
+import "react-toastify/dist/ReactToastify.css";
 import { cn } from "@/lib/utils";
 import { initializeServices } from "@/lib/services/factory";
+import { AppToastContainer } from "@/components/ui/app-toast-container";
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
@@ -33,7 +36,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn("h-full", "antialiased", manrope.variable, mono.variable, "font-sans", geist.variable)}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <AppToastContainer />
+      </body>
     </html>
   );
 }

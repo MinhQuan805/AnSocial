@@ -269,6 +269,7 @@ export function useInstagramIntegration({
   const [parameterDrafts, setParameterDrafts] = useState<Record<string, string>>({});
   const [newParamKey, setNewParamKey] = useState("");
   const [newParamValue, setNewParamValue] = useState("");
+  const [httpQueryParameters, setHttpQueryParameters] = useState<Array<{ key: string; value: string }>>([]);
   const [insightReport, setInsightReport] = useState<InsightReport | null>(null);
   const [mediaReport, setMediaReport] = useState<MediaReport | null>(null);
 
@@ -432,7 +433,11 @@ export function useInstagramIntegration({
 
   const requestParameterRows = useMemo<Array<RequestParameterRow>>(() => {
     if (!isInstagramOAuthLinked) {
-      return [];
+      return httpQueryParameters.map((item) => ({
+        key: item.key,
+        value: item.value,
+        required: false,
+      }));
     }
 
     if (isMediaEndpoint) {
@@ -466,6 +471,7 @@ export function useInstagramIntegration({
   }, [
     customEndDate,
     customStartDate,
+    httpQueryParameters,
     isInstagramOAuthLinked,
     isMediaEndpoint,
     mediaFields,
@@ -725,6 +731,41 @@ export function useInstagramIntegration({
     setEditableUrl(apiUrlPreview);
   }, [apiUrlPreview, isInstagramOAuthLinked, setEditableUrl, urlInputDirty]);
 
+  useEffect(() => {
+    if (isInstagramOAuthLinked) {
+      return;
+    }
+
+    setEditableUrl((previousValue) => {
+      const singleUrl = sanitizeSingleUrlInput(previousValue);
+      if (!singleUrl) {
+        return previousValue;
+      }
+
+      try {
+        const parsed = new URL(singleUrl);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          return previousValue;
+        }
+
+        parsed.search = "";
+        for (const parameter of httpQueryParameters) {
+          const key = parameter.key.trim();
+          if (!key) {
+            continue;
+          }
+
+          parsed.searchParams.set(key, parameter.value);
+        }
+
+        const normalized = parsed.toString();
+        return normalized === previousValue ? previousValue : normalized;
+      } catch {
+        return previousValue;
+      }
+    });
+  }, [httpQueryParameters, isInstagramOAuthLinked, setEditableUrl]);
+
   const resetRequiredParameter = (key: string) => {
     if (isMediaEndpoint) {
       if (key === "fields") {
@@ -752,7 +793,23 @@ export function useInstagramIntegration({
 
   const applyParameter = (rawKey: string, rawValue: string) => {
     const key = rawKey.trim().toLowerCase();
+    const normalizedKey = rawKey.trim();
     const value = rawValue.trim();
+
+    if (!isInstagramOAuthLinked) {
+      if (!normalizedKey) {
+        return;
+      }
+
+      setHttpQueryParameters((previous) => {
+        const next = previous.filter(
+          (item) => item.key.trim().toLowerCase() !== normalizedKey.toLowerCase(),
+        );
+        next.push({ key: normalizedKey, value });
+        return next;
+      });
+      return;
+    }
 
     if (isMediaEndpoint) {
       if (!MEDIA_ALLOWED_PARAM_KEYS.has(key)) {
@@ -850,6 +907,14 @@ export function useInstagramIntegration({
   };
 
   const removeParameter = (key: string, required: boolean) => {
+    if (!isInstagramOAuthLinked) {
+      const normalizedKey = key.trim().toLowerCase();
+      setHttpQueryParameters((previous) =>
+        previous.filter((item) => item.key.trim().toLowerCase() !== normalizedKey),
+      );
+      return;
+    }
+
     if (required) {
       resetRequiredParameter(key);
       return;
@@ -923,6 +988,22 @@ export function useInstagramIntegration({
       }
 
       if (!isInstagramOAuthLinked) {
+        const parsedParams = new Map<string, string>();
+        parsed.searchParams.forEach((paramValue, paramKey) => {
+          const key = paramKey.trim();
+          if (!key) {
+            return;
+          }
+
+          parsedParams.set(key, paramValue);
+        });
+
+        setHttpQueryParameters(
+          Array.from(parsedParams.entries()).map(([paramKey, paramValue]) => ({
+            key: paramKey,
+            value: paramValue,
+          })),
+        );
         setEditableUrl(parsed.toString());
         setUrlInputDirty(false);
         return {};
@@ -1016,10 +1097,7 @@ export function useInstagramIntegration({
 
     setEditableUrl(normalizedUrl.toString());
     setUrlInputDirty(false);
-
-    return {
-      status: "URL synced to parameters. Unsupported keys were ignored automatically.",
-    };
+    return {};
   };
 
   const runOauth = async (): Promise<string> => {
