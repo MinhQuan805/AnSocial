@@ -1,4 +1,4 @@
-import type { ExtendedRecordMap } from "notion-types";
+import type { ExtendedRecordMap } from 'notion-types';
 
 type PublicNotionPageResponse = {
   pageId: string;
@@ -11,11 +11,11 @@ type PublicNotionPageError = {
 
 export async function fetchPublicNotionPage(
   target: string,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<PublicNotionPageResponse> {
   const response = await fetch(`/api/notion/public-page?target=${encodeURIComponent(target)}`, {
-    method: "GET",
-    cache: "no-store",
+    method: 'GET',
+    cache: 'no-store',
     signal,
   });
 
@@ -23,11 +23,11 @@ export async function fetchPublicNotionPage(
     | PublicNotionPageResponse
     | (PublicNotionPageResponse & PublicNotionPageError);
 
-  if (!response.ok || !("recordMap" in payload)) {
+  if (!response.ok || !('recordMap' in payload)) {
     const errorMessage =
-      "error" in payload && typeof payload.error === "string"
+      'error' in payload && typeof payload.error === 'string'
         ? payload.error
-        : "Unable to load public Notion page.";
+        : 'Unable to load public Notion page.';
     throw new Error(errorMessage);
   }
 

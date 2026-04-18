@@ -3,27 +3,27 @@ import {
   type AccountInsightsResult,
   type GraphInsightsQuery,
   type InstagramAccount,
-} from "@/lib/core/domain";
-import { ExternalApiError } from "@/lib/core/errors";
-import { ApiClient } from "@/lib/infra/http/api-client";
-import { filterFieldsForEndpoint } from "@/lib/insights/filter-media-fields";
-import type { IFacebookGraphRepository } from "@/lib/repositories/interfaces";
+} from '@/lib/core/domain';
+import { ExternalApiError } from '@/lib/core/errors';
+import { ApiClient } from '@/lib/infra/http/api-client';
+import { filterFieldsForEndpoint } from '@/lib/insights/filter-media-fields';
+import type { IFacebookGraphRepository } from '@/lib/repositories/interfaces';
 
 interface GraphListResponse<T> {
   data?: T[];
 }
 
 export class FacebookGraphRepository implements IFacebookGraphRepository {
-  private readonly baseUrl = "https://graph.facebook.com/v25.0";
+  private readonly baseUrl = 'https://graph.facebook.com/v25.0';
 
   constructor(private readonly client: ApiClient) {}
 
   public async exchangeCodeForShortToken(code: string, redirectUri: string): Promise<string> {
     const url = new URL(`${this.baseUrl}/oauth/access_token`);
-    url.searchParams.set("client_id", process.env.META_APP_ID ?? "");
-    url.searchParams.set("client_secret", process.env.META_APP_SECRET ?? "");
-    url.searchParams.set("redirect_uri", redirectUri);
-    url.searchParams.set("code", code);
+    url.searchParams.set('client_id', process.env.META_APP_ID ?? '');
+    url.searchParams.set('client_secret', process.env.META_APP_SECRET ?? '');
+    url.searchParams.set('redirect_uri', redirectUri);
+    url.searchParams.set('code', code);
 
     const payload = await this.client.requestJson<{ access_token?: string }>({
       url: url.toString(),
@@ -32,20 +32,20 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     });
 
     if (!payload.access_token) {
-      throw new ExternalApiError("Facebook OAuth response does not include access_token", 502);
+      throw new ExternalApiError('Facebook OAuth response does not include access_token', 502);
     }
 
     return payload.access_token;
   }
 
   public async exchangeShortForLongToken(
-    shortToken: string,
+    shortToken: string
   ): Promise<{ token: string; expiresIn: number }> {
     const url = new URL(`${this.baseUrl}/oauth/access_token`);
-    url.searchParams.set("grant_type", "fb_exchange_token");
-    url.searchParams.set("client_id", process.env.META_APP_ID ?? "");
-    url.searchParams.set("client_secret", process.env.META_APP_SECRET ?? "");
-    url.searchParams.set("fb_exchange_token", shortToken);
+    url.searchParams.set('grant_type', 'fb_exchange_token');
+    url.searchParams.set('client_id', process.env.META_APP_ID ?? '');
+    url.searchParams.set('client_secret', process.env.META_APP_SECRET ?? '');
+    url.searchParams.set('fb_exchange_token', shortToken);
 
     const payload = await this.client.requestJson<{
       access_token?: string;
@@ -57,7 +57,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     });
 
     if (!payload.access_token) {
-      throw new ExternalApiError("Unable to exchange long-lived Facebook token", 502);
+      throw new ExternalApiError('Unable to exchange long-lived Facebook token', 502);
     }
 
     return {
@@ -68,7 +68,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
 
   public async getAuthenticatedUser(accessToken: string): Promise<{ id: string; name?: string }> {
     const url = new URL(`${this.baseUrl}/me`);
-    url.searchParams.set("fields", "id,name");
+    url.searchParams.set('fields', 'id,name');
 
     const payload = await this.client.requestJson<{ id?: string; name?: string }>({
       url: url.toString(),
@@ -78,7 +78,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     });
 
     if (!payload.id) {
-      throw new ExternalApiError("Unable to load authenticated Meta user", 502);
+      throw new ExternalApiError('Unable to load authenticated Meta user', 502);
     }
 
     return { id: payload.id, name: payload.name };
@@ -86,11 +86,11 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
 
   public async getInstagramAccounts(accessToken: string): Promise<InstagramAccount[]> {
     const url = new URL(`${this.baseUrl}/me/accounts`);
-    url.searchParams.set("fields", "id,name,instagram_business_account{id,username}");
+    url.searchParams.set('fields', 'id,name,instagram_business_account{id,username}');
 
-    console.log("[FB API] 📡 Calling Graph API: /me/accounts");
-    console.log("[FB API] Token preview:", accessToken.substring(0, 15) + "...");
-    console.log("[FB API] Full URL:", url.toString());
+    console.log('[FB API] 📡 Calling Graph API: /me/accounts');
+    console.log('[FB API] Token preview:', accessToken.substring(0, 15) + '...');
+    console.log('[FB API] Full URL:', url.toString());
 
     const payload = await this.client.requestJson<
       GraphListResponse<{
@@ -105,7 +105,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       retryCount: 2,
     });
 
-    console.log("[FB API] ✅ Response data:", payload.data?.length ?? 0, "items");
+    console.log('[FB API] ✅ Response data:', payload.data?.length ?? 0, 'items');
 
     return (payload.data ?? [])
       .flatMap((page) => {
@@ -117,7 +117,9 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
           {
             id: page.instagram_business_account.id,
             username:
-              page.instagram_business_account.username ?? page.name ?? page.instagram_business_account.id,
+              page.instagram_business_account.username ??
+              page.name ??
+              page.instagram_business_account.id,
             pageId: page.id,
             pageName: page.name,
           },
@@ -128,24 +130,24 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
 
   public async getAccountInsights(
     query: GraphInsightsQuery,
-    accessToken: string,
+    accessToken: string
   ): Promise<AccountMetricResult[]> {
     const url = new URL(`${this.baseUrl}/${query.igAccountId}/insights`);
-    url.searchParams.set("metric", query.effectiveMetrics.join(","));
-    url.searchParams.set("period", query.period);
-    url.searchParams.set("metric_type", query.metricType);
+    url.searchParams.set('metric', query.effectiveMetrics.join(','));
+    url.searchParams.set('period', query.period);
+    url.searchParams.set('metric_type', query.metricType);
 
     if (query.breakdown) {
-      url.searchParams.set("breakdown", query.breakdown);
+      url.searchParams.set('breakdown', query.breakdown);
     }
 
     if (query.timeframe) {
-      url.searchParams.set("timeframe", query.timeframe);
+      url.searchParams.set('timeframe', query.timeframe);
     }
 
-    if (query.period === "day" && query.sinceUnix && query.untilUnix) {
-      url.searchParams.set("since", String(query.sinceUnix));
-      url.searchParams.set("until", String(query.untilUnix));
+    if (query.period === 'day' && query.sinceUnix && query.untilUnix) {
+      url.searchParams.set('since', String(query.sinceUnix));
+      url.searchParams.set('until', String(query.untilUnix));
     }
 
     const payload = await this.client.requestJson<
@@ -182,7 +184,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
         const dimensionKeys = part.dimension_keys ?? [];
 
         return (part.results ?? []).map((result) => ({
-          metric: metric.name ?? "unknown",
+          metric: metric.name ?? 'unknown',
           dimensionKeys,
           dimensionValues: result.dimension_values ?? [],
           value: this.asNumber(result.value),
@@ -193,7 +195,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       const totalFromPoints = points.reduce((sum, item) => sum + item.value, 0);
 
       return {
-        metric: metric.name ?? "unknown",
+        metric: metric.name ?? 'unknown',
         period: metric.period ?? query.period,
         points,
         totalValue: this.asNumber(metric.total_value?.value) || totalFromPoints,
@@ -206,14 +208,14 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
     igAccountId: string;
     fields: string[];
     limit: number;
-    endpoint: "account_media" | "tagged_media";
+    endpoint: 'account_media' | 'tagged_media';
     accessToken: string;
   }): Promise<Array<Record<string, unknown>>> {
-    const path = args.endpoint === "tagged_media" ? "tags" : "media";
+    const path = args.endpoint === 'tagged_media' ? 'tags' : 'media';
     const supportedFields = filterFieldsForEndpoint(args.fields, args.endpoint);
     const url = new URL(`${this.baseUrl}/${args.igAccountId}/${path}`);
-    url.searchParams.set("fields", supportedFields.join(","));
-    url.searchParams.set("limit", String(args.limit));
+    url.searchParams.set('fields', supportedFields.join(','));
+    url.searchParams.set('limit', String(args.limit));
 
     const payload = await this.client.requestJson<GraphListResponse<Record<string, unknown>>>({
       url: url.toString(),
@@ -229,7 +231,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
         selected[field] = item[field];
       }
 
-      if (typeof selected.id !== "string" && typeof item.id === "string") {
+      if (typeof selected.id !== 'string' && typeof item.id === 'string') {
         selected.id = item.id;
       }
 
@@ -240,15 +242,12 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
   public async getMediaPerformance(
     igAccountId: string,
     sinceUnix: number,
-    mediaFormat: GraphInsightsQuery["mediaFormat"],
-    accessToken: string,
-  ): Promise<AccountInsightsResult["mediaPerformance"]> {
+    mediaFormat: GraphInsightsQuery['mediaFormat'],
+    accessToken: string
+  ): Promise<AccountInsightsResult['mediaPerformance']> {
     const url = new URL(`${this.baseUrl}/${igAccountId}/media`);
-    url.searchParams.set(
-      "fields",
-      "id,media_type,caption,timestamp,like_count,comments_count",
-    );
-    url.searchParams.set("limit", "50");
+    url.searchParams.set('fields', 'id,media_type,caption,timestamp,like_count,comments_count');
+    url.searchParams.set('limit', '50');
 
     const payload = await this.client.requestJson<
       GraphListResponse<{
@@ -270,8 +269,8 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
 
     return (payload.data ?? [])
       .filter((media) => {
-        const mediaType = media.media_type ?? "";
-        if (mediaFormat !== "ALL" && mediaType !== mediaFormat) {
+        const mediaType = media.media_type ?? '';
+        if (mediaFormat !== 'ALL' && mediaType !== mediaFormat) {
           return false;
         }
 
@@ -285,8 +284,8 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
         const likeCount = Number(media.like_count ?? 0);
         const commentCount = Number(media.comments_count ?? 0);
         return {
-          mediaId: media.id ?? "unknown",
-          mediaType: media.media_type ?? "UNKNOWN",
+          mediaId: media.id ?? 'unknown',
+          mediaType: media.media_type ?? 'UNKNOWN',
           likeCount,
           commentCount,
           caption: media.caption,
@@ -300,11 +299,11 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
 
   public async getOnlineFollowers(
     igAccountId: string,
-    accessToken: string,
+    accessToken: string
   ): Promise<Record<string, number>> {
     const url = new URL(`${this.baseUrl}/${igAccountId}/insights`);
-    url.searchParams.set("metric", "online_followers");
-    url.searchParams.set("period", "lifetime");
+    url.searchParams.set('metric', 'online_followers');
+    url.searchParams.set('period', 'lifetime');
 
     const payload = await this.client.requestJson<
       GraphListResponse<{ values?: Array<{ value?: Record<string, number> }> }>
@@ -321,14 +320,14 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
 
   public async getAudienceDemographics(
     igAccountId: string,
-    accessToken: string,
-  ): Promise<AccountInsightsResult["demographics"]> {
+    accessToken: string
+  ): Promise<AccountInsightsResult['demographics']> {
     const url = new URL(`${this.baseUrl}/${igAccountId}/insights`);
-    url.searchParams.set("metric", "follower_demographics");
-    url.searchParams.set("period", "lifetime");
-    url.searchParams.set("metric_type", "total_value");
-    url.searchParams.set("breakdown", "age,gender,country,city");
-    url.searchParams.set("timeframe", "this_month");
+    url.searchParams.set('metric', 'follower_demographics');
+    url.searchParams.set('period', 'lifetime');
+    url.searchParams.set('metric_type', 'total_value');
+    url.searchParams.set('breakdown', 'age,gender,country,city');
+    url.searchParams.set('timeframe', 'this_month');
 
     try {
       const payload = await this.client.requestJson<
@@ -353,7 +352,7 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
       const toBuckets = (index: number) =>
         results
           .map((item) => {
-            const label = item.dimension_values?.[index] ?? "unknown";
+            const label = item.dimension_values?.[index] ?? 'unknown';
             return {
               label,
               value: Number(item.value ?? 0),
@@ -377,19 +376,19 @@ export class FacebookGraphRepository implements IFacebookGraphRepository {
   }
 
   private asNumber(value: unknown): number {
-    if (typeof value === "number") {
+    if (typeof value === 'number') {
       return Number.isFinite(value) ? value : 0;
     }
 
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : 0;
     }
 
-    if (value && typeof value === "object") {
+    if (value && typeof value === 'object') {
       return Object.values(value as Record<string, unknown>).reduce(
         (sum: number, item) => sum + this.asNumber(item),
-        0,
+        0
       );
     }
 

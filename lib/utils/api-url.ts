@@ -3,9 +3,9 @@ import type {
   InsightPeriod,
   InsightRangeDays,
   InsightTimeframe,
-} from "@/lib/core/domain";
-import { resolveInsightRequest } from "@/lib/insights/metric-rules";
-import { unixRangeFromDays } from "@/lib/utils/query";
+} from '@/lib/core/domain';
+import { resolveInsightRequest } from '@/lib/insights/metric-rules';
+import { unixRangeFromDays } from '@/lib/utils/query';
 
 export function buildGraphApiUrl(params: {
   accountId: string;
@@ -27,21 +27,21 @@ export function buildGraphApiUrl(params: {
   const range = unixRangeFromDays(resolved.rangeDays, params.customStartDate, params.customEndDate);
   const url = new URL(`https://graph.facebook.com/v25.0/${params.accountId}/insights`);
 
-  url.searchParams.set("metric", resolved.effectiveMetrics.join(","));
-  url.searchParams.set("metric_type", resolved.metricType);
-  url.searchParams.set("period", resolved.period);
+  url.searchParams.set('metric', resolved.effectiveMetrics.join(','));
+  url.searchParams.set('metric_type', resolved.metricType);
+  url.searchParams.set('period', resolved.period);
 
   if (resolved.breakdown) {
-    url.searchParams.set("breakdown", resolved.breakdown);
+    url.searchParams.set('breakdown', resolved.breakdown);
   }
 
   if (resolved.timeframe) {
-    url.searchParams.set("timeframe", resolved.timeframe);
+    url.searchParams.set('timeframe', resolved.timeframe);
   }
 
-  if (resolved.period === "day") {
-    url.searchParams.set("since", String(range.sinceUnix));
-    url.searchParams.set("until", String(range.untilUnix));
+  if (resolved.period === 'day') {
+    url.searchParams.set('since', String(range.sinceUnix));
+    url.searchParams.set('until', String(range.untilUnix));
   }
 
   return url.toString();
@@ -51,22 +51,22 @@ export function buildGraphMediaApiUrl(params: {
   accountId: string;
   fields: string[];
   limit: number;
-  endpoint: "account_media" | "tagged_media";
+  endpoint: 'account_media' | 'tagged_media';
 }): string {
   const url = new URL(
     `https://graph.facebook.com/v25.0/${params.accountId}/${
-      params.endpoint === "tagged_media" ? "tags" : "media"
-    }`,
+      params.endpoint === 'tagged_media' ? 'tags' : 'media'
+    }`
   );
   const fields = Array.from(
-    new Set(params.fields.map((item) => item.trim()).filter((item) => item.length > 0)),
+    new Set(params.fields.map((item) => item.trim()).filter((item) => item.length > 0))
   );
 
   if (fields.length > 0) {
-    url.searchParams.set("fields", fields.join(","));
+    url.searchParams.set('fields', fields.join(','));
   }
 
-  url.searchParams.set("limit", String(params.limit));
+  url.searchParams.set('limit', String(params.limit));
   return url.toString();
 }
 
@@ -83,25 +83,23 @@ export function buildGraphMediaIdApiUrl(params: {
   metricType?: string;
   period?: string;
 }): string {
-  const pathSuffix = params.edge ? `/${params.edge}` : "";
-  const url = new URL(
-    `https://graph.facebook.com/v25.0/${params.mediaId}${pathSuffix}`,
-  );
+  const pathSuffix = params.edge ? `/${params.edge}` : '';
+  const url = new URL(`https://graph.facebook.com/v25.0/${params.mediaId}${pathSuffix}`);
 
-  if (params.edge === "insights" && params.metrics && params.metrics.length > 0) {
-    url.searchParams.set("metric", params.metrics.join(","));
+  if (params.edge === 'insights' && params.metrics && params.metrics.length > 0) {
+    url.searchParams.set('metric', params.metrics.join(','));
     if (params.metricType) {
-      url.searchParams.set("metric_type", params.metricType);
+      url.searchParams.set('metric_type', params.metricType);
     }
     if (params.period) {
-      url.searchParams.set("period", params.period);
+      url.searchParams.set('period', params.period);
     }
   } else if (params.fields && params.fields.length > 0) {
     const uniqueFields = Array.from(
-      new Set(params.fields.map((f) => f.trim()).filter((f) => f.length > 0)),
+      new Set(params.fields.map((f) => f.trim()).filter((f) => f.length > 0))
     );
     if (uniqueFields.length > 0) {
-      url.searchParams.set("fields", uniqueFields.join(","));
+      url.searchParams.set('fields', uniqueFields.join(','));
     }
   }
 

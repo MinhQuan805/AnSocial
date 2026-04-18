@@ -1,8 +1,8 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID } from 'node:crypto';
 
-import type { NextRequest, NextResponse } from "next/server";
+import type { NextRequest, NextResponse } from 'next/server';
 
-import { AuthError } from "@/lib/core/errors";
+import { AuthError } from '@/lib/core/errors';
 
 export class OauthStateService {
   private stateCookie(provider: string): string {
@@ -13,26 +13,22 @@ export class OauthStateService {
     return `oauth_ctx_${provider}`;
   }
 
-  public issue(
-    provider: string,
-    response: NextResponse,
-    context?: Record<string, string>,
-  ): string {
+  public issue(provider: string, response: NextResponse, context?: Record<string, string>): string {
     const state = randomUUID();
     response.cookies.set(this.stateCookie(provider), state, {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
       maxAge: 60 * 10,
     });
 
     if (context) {
       response.cookies.set(this.contextCookie(provider), JSON.stringify(context), {
         httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        path: "/",
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
         maxAge: 60 * 10,
       });
     }
@@ -40,13 +36,17 @@ export class OauthStateService {
     return state;
   }
 
-  public consume(provider: string, request: NextRequest, state: string | null): {
+  public consume(
+    provider: string,
+    request: NextRequest,
+    state: string | null
+  ): {
     context: Record<string, string>;
   } {
     const expected = request.cookies.get(this.stateCookie(provider))?.value;
 
     if (!state || !expected || expected !== state) {
-      throw new AuthError("Invalid OAuth state. Please retry login.");
+      throw new AuthError('Invalid OAuth state. Please retry login.');
     }
 
     const rawCtx = request.cookies.get(this.contextCookie(provider))?.value;
@@ -56,19 +56,19 @@ export class OauthStateService {
   }
 
   public clear(provider: string, response: NextResponse): void {
-    response.cookies.set(this.stateCookie(provider), "", {
+    response.cookies.set(this.stateCookie(provider), '', {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
       maxAge: 0,
     });
 
-    response.cookies.set(this.contextCookie(provider), "", {
+    response.cookies.set(this.contextCookie(provider), '', {
       httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
       maxAge: 0,
     });
   }

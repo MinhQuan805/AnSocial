@@ -1,36 +1,31 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   IProviderConnectionRepository,
   ProviderConnection,
   ProviderConnectionPayload,
-} from "@/lib/core/auth.types";
-import { AppError } from "@/lib/core/errors";
-import type { TokenCryptoService } from "@/lib/services/security/token-crypto.service";
+} from '@/lib/core/auth.types';
+import { AppError } from '@/lib/core/errors';
+import type { TokenCryptoService } from '@/lib/services/security/token-crypto.service';
 
 /**
  * Supabase implementation of Provider Connection Repository
  */
-export class SupabaseProviderConnectionRepository
-  implements IProviderConnectionRepository
-{
+export class SupabaseProviderConnectionRepository implements IProviderConnectionRepository {
   constructor(
     private readonly client: SupabaseClient,
-    private readonly tokenCrypto: TokenCryptoService,
+    private readonly tokenCrypto: TokenCryptoService
   ) {}
 
-  public async get(
-    userId: string,
-    providerType: string,
-  ): Promise<ProviderConnection | null> {
+  public async get(userId: string, providerType: string): Promise<ProviderConnection | null> {
     const { data, error } = await this.client
-      .from("provider_connections")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("provider_type", providerType)
+      .from('provider_connections')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('provider_type', providerType)
       .single();
 
-    if (error && error.code !== "PGRST116") {
-      throw new AppError("SUPABASE_READ_ERROR", error.message, 500);
+    if (error && error.code !== 'PGRST116') {
+      throw new AppError('SUPABASE_READ_ERROR', error.message, 500);
     }
 
     return data ? this.mapToConnection(data) : null;
@@ -38,12 +33,12 @@ export class SupabaseProviderConnectionRepository
 
   public async list(userId: string): Promise<ProviderConnection[]> {
     const { data, error } = await this.client
-      .from("provider_connections")
-      .select("*")
-      .eq("user_id", userId);
+      .from('provider_connections')
+      .select('*')
+      .eq('user_id', userId);
 
     if (error) {
-      throw new AppError("SUPABASE_READ_ERROR", error.message, 500);
+      throw new AppError('SUPABASE_READ_ERROR', error.message, 500);
     }
 
     return data.map((d) => this.mapToConnection(d));
@@ -51,11 +46,11 @@ export class SupabaseProviderConnectionRepository
 
   public async upsert(
     userId: string,
-    payload: ProviderConnectionPayload,
+    payload: ProviderConnectionPayload
   ): Promise<ProviderConnection> {
     const encryptedAccessToken = this.tokenCrypto.encryptIfNeeded(payload.accessToken);
     if (!encryptedAccessToken) {
-      throw new AppError("TOKEN_ENCRYPT_FAILED", "Failed to encrypt access token", 500);
+      throw new AppError('TOKEN_ENCRYPT_FAILED', 'Failed to encrypt access token', 500);
     }
 
     const encryptedRefreshToken = payload.refreshToken
@@ -63,7 +58,7 @@ export class SupabaseProviderConnectionRepository
       : null;
 
     const { data, error } = await this.client
-      .from("provider_connections")
+      .from('provider_connections')
       .upsert(
         {
           user_id: userId,
@@ -74,13 +69,13 @@ export class SupabaseProviderConnectionRepository
           expires_at: payload.expiresAt?.toISOString(),
           metadata: payload.metadata || {},
         },
-        { onConflict: "user_id,provider_type" },
+        { onConflict: 'user_id,provider_type' }
       )
       .select()
       .single();
 
     if (error) {
-      throw new AppError("SUPABASE_UPSERT_ERROR", error.message, 500);
+      throw new AppError('SUPABASE_UPSERT_ERROR', error.message, 500);
     }
 
     return this.mapToConnection(data);
@@ -88,20 +83,20 @@ export class SupabaseProviderConnectionRepository
 
   public async delete(userId: string, providerType: string): Promise<void> {
     const { error } = await this.client
-      .from("provider_connections")
+      .from('provider_connections')
       .delete()
-      .eq("user_id", userId)
-      .eq("provider_type", providerType);
+      .eq('user_id', userId)
+      .eq('provider_type', providerType);
 
     if (error) {
-      throw new AppError("SUPABASE_DELETE_ERROR", error.message, 500);
+      throw new AppError('SUPABASE_DELETE_ERROR', error.message, 500);
     }
   }
 
   private mapToConnection(data: any): ProviderConnection {
     const decryptedAccessToken = this.tokenCrypto.decryptIfNeeded(data.access_token);
     if (!decryptedAccessToken) {
-      throw new AppError("TOKEN_DECRYPT_FAILED", "Failed to decrypt access token", 500);
+      throw new AppError('TOKEN_DECRYPT_FAILED', 'Failed to decrypt access token', 500);
     }
 
     const decryptedRefreshToken = this.tokenCrypto.decryptIfNeeded(data.refresh_token);

@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import Link from "next/link";
+import Link from 'next/link';
 
 import {
   SidebarGroup,
@@ -9,14 +9,14 @@ import {
   SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 import type {
   ConsoleSidebarActionItem,
   ConsoleSidebarAction,
   ConsoleSidebarNavGroup,
   ConsoleSidebarLinkItem,
   ConsoleSidebarNavItem,
-} from "@/components/app/console/sidebar/types";
+} from '@/components/app/console/sidebar/types';
 
 interface ConsoleNavGroupProps {
   group: ConsoleSidebarNavGroup;
@@ -25,7 +25,7 @@ interface ConsoleNavGroupProps {
 }
 
 function isRouteActive(pathname: string, href: string): boolean {
-  if (href === "/console") {
+  if (href === '/console') {
     return pathname === href;
   }
 
@@ -33,11 +33,11 @@ function isRouteActive(pathname: string, href: string): boolean {
 }
 
 function isLinkItem(item: ConsoleSidebarNavItem): item is ConsoleSidebarLinkItem {
-  return typeof item.href === "string";
+  return typeof item.href === 'string';
 }
 
 function isActionItem(item: ConsoleSidebarNavItem): item is ConsoleSidebarActionItem {
-  return typeof item.action === "string";
+  return typeof item.action === 'string';
 }
 
 export function ConsoleNavGroup({ group, pathname, onAction }: ConsoleNavGroupProps) {
@@ -48,7 +48,11 @@ export function ConsoleNavGroup({ group, pathname, onAction }: ConsoleNavGroupPr
         {group.items.map((item) => (
           <SidebarMenuItem key={`${group.title}-${item.title}`}>
             {isLinkItem(item) ? (
-              <SidebarMenuButton asChild isActive={isRouteActive(pathname, item.href)} tooltip={item.title}>
+              <SidebarMenuButton
+                asChild
+                isActive={isRouteActive(pathname, item.href)}
+                tooltip={item.title}
+              >
                 <Link href={item.href}>
                   <item.icon />
                   <span>{item.title}</span>

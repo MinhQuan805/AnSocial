@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   useEffect,
@@ -7,8 +7,8 @@ import {
   type ComponentProps,
   type Dispatch,
   type SetStateAction,
-} from "react";
-import { format } from "date-fns";
+} from 'react';
+import { format } from 'date-fns';
 
 import {
   BREAKDOWN_LABELS,
@@ -20,28 +20,26 @@ import {
   MEDIA_ALLOWED_PARAM_KEYS,
   METRIC_OPTIONS,
   TIMEFRAME_OPTIONS,
-} from "@/components/app/console/constants";
-import { InstagramBuilderCard } from "@/components/app/console/cards/builder/instagram-builder-card";
-import {
-  type SingleSelectDropdownOption,
-} from "@/components/app/console/forms/single-select-dropdown-field";
+} from '@/components/app/console/constants';
+import { InstagramBuilderCard } from '@/components/app/console/cards/builder/instagram-builder-card';
+import { type SingleSelectDropdownOption } from '@/components/app/console/forms/single-select-dropdown-field';
 import type {
   EndpointKey,
   InsightReport,
   MediaReport,
   RequestParameterRow,
   SessionView,
-} from "@/components/app/console/types";
+} from '@/components/app/console/types';
 import type {
   InsightBreakdown,
   InsightPeriod,
   InsightRangeDays,
   InsightTimeframe,
-} from "@/lib/core/domain";
+} from '@/lib/core/domain';
 import {
   ACCOUNT_MEDIA_FIELD_OPTIONS,
   DEFAULT_ACCOUNT_MEDIA_FIELDS,
-} from "@/lib/insights/media-fields";
+} from '@/lib/insights/media-fields';
 import {
   type EndpointDefinition,
   type EndpointId,
@@ -51,17 +49,17 @@ import {
   getFieldsForMediaType,
   getMetricsForMediaType,
   validateInsightSelection,
-} from "@/lib/insights/endpoint-registry";
-import { resolveInsightRequest } from "@/lib/insights/metric-rules";
+} from '@/lib/insights/endpoint-registry';
+import { resolveInsightRequest } from '@/lib/insights/metric-rules';
 import {
   buildGraphApiUrl,
   buildGraphMediaApiUrl,
   buildGraphMediaIdApiUrl,
-} from "@/lib/utils/api-url";
-import { fetchWithAuth } from "@/lib/utils/use-auth-headers";
-import { unixRangeFromDays } from "@/lib/utils/query";
+} from '@/lib/utils/api-url';
+import { fetchWithAuth } from '@/lib/utils/use-auth-headers';
+import { unixRangeFromDays } from '@/lib/utils/query';
 
-type AuthMode = "oauth" | "token" | "basic";
+type AuthMode = 'oauth' | 'token' | 'basic';
 
 type SyncUrlResult = {
   error?: string;
@@ -108,9 +106,9 @@ interface UseInstagramIntegrationResult {
   buildSourceAccount: () => string;
 }
 
-type MediaFormat = "ALL" | "IMAGE" | "VIDEO" | "REEL" | "CAROUSEL_ALBUM";
+type MediaFormat = 'ALL' | 'IMAGE' | 'VIDEO' | 'REEL' | 'CAROUSEL_ALBUM';
 
-const NO_BREAKDOWN_VALUE = "__none__";
+const NO_BREAKDOWN_VALUE = '__none__';
 
 function uniqueOrdered(items: string[]): string[] {
   const seen = new Set<string>();
@@ -130,7 +128,7 @@ function uniqueOrdered(items: string[]): string[] {
 
 function parseCsvValues(raw: string, allowedValues: Set<string>): string[] {
   const cleaned = raw
-    .split(",")
+    .split(',')
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
 
@@ -138,9 +136,9 @@ function parseCsvValues(raw: string, allowedValues: Set<string>): string[] {
 }
 
 function sanitizeSingleUrlInput(raw: string): string {
-  const compact = raw.replace(/\r?\n/g, " ").trim();
+  const compact = raw.replace(/\r?\n/g, ' ').trim();
   const [firstToken] = compact.split(/\s+/);
-  return firstToken ?? "";
+  return firstToken ?? '';
 }
 
 function normalizeGraphUrl(raw: string, fallback: string): URL {
@@ -155,10 +153,10 @@ function normalizeGraphUrl(raw: string, fallback: string): URL {
   }
 
   const normalized = new URL(GRAPH_BASE_URL);
-  const fallbackPath = fallbackUrl.pathname.replace(/^\/v\d+\.\d+\/?/i, "/");
-  const nextPath = parsed.pathname.replace(/^\/v\d+\.\d+\/?/i, "/");
+  const fallbackPath = fallbackUrl.pathname.replace(/^\/v\d+\.\d+\/?/i, '/');
+  const nextPath = parsed.pathname.replace(/^\/v\d+\.\d+\/?/i, '/');
 
-  normalized.pathname = nextPath === "/" || nextPath.length === 0 ? fallbackPath : nextPath;
+  normalized.pathname = nextPath === '/' || nextPath.length === 0 ? fallbackPath : nextPath;
   normalized.search = parsed.search;
   return normalized;
 }
@@ -191,13 +189,16 @@ function parseUnixDate(raw: string | undefined): Date | undefined {
   return isValidDate(parsed) ? parsed : undefined;
 }
 
-function validateCustomDateRange(startDate: Date | undefined, endDate: Date | undefined): string | null {
+function validateCustomDateRange(
+  startDate: Date | undefined,
+  endDate: Date | undefined
+): string | null {
   if (!startDate || !endDate) {
-    return "Both start and end dates are required";
+    return 'Both start and end dates are required';
   }
 
   if (startDate > endDate) {
-    return "Start date must be before end date";
+    return 'Start date must be before end date';
   }
 
   const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
@@ -212,11 +213,11 @@ function validateCustomDateRange(startDate: Date | undefined, endDate: Date | un
 
 function parseRangeDays(raw: string): InsightRangeDays {
   if (
-    raw === "today" ||
-    raw === "yesterday" ||
-    raw === "this_month" ||
-    raw === "last_month" ||
-    raw === "custom"
+    raw === 'today' ||
+    raw === 'yesterday' ||
+    raw === 'this_month' ||
+    raw === 'last_month' ||
+    raw === 'custom'
   ) {
     return raw;
   }
@@ -235,24 +236,24 @@ export function useInstagramIntegration({
   editableUrl,
   setEditableUrl,
 }: UseInstagramIntegrationOptions): UseInstagramIntegrationResult {
-  const [selectedIdType, setSelectedIdType] = useState<IdType>("ig_user_id");
-  const [selectedEndpointId, setSelectedEndpointId] = useState<EndpointId>("ig_user_id/insights");
+  const [selectedIdType, setSelectedIdType] = useState<IdType>('ig_user_id');
+  const [selectedEndpointId, setSelectedEndpointId] = useState<EndpointId>('ig_user_id/insights');
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(
-    session.accounts[0]?.id ? [session.accounts[0].id] : [],
+    session.accounts[0]?.id ? [session.accounts[0].id] : []
   );
   const [metrics, setMetrics] = useState<string[]>(DEFAULT_INSIGHT_METRICS);
   const [mediaFields, setMediaFields] = useState<string[]>(DEFAULT_ACCOUNT_MEDIA_FIELDS);
   const [mediaLimit, setMediaLimit] = useState(25);
-  const [period, setPeriod] = useState<InsightPeriod>("day");
+  const [period, setPeriod] = useState<InsightPeriod>('day');
   const [rangeDays, setRangeDays] = useState<InsightRangeDays>(7);
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
   const [customDateError, setCustomDateError] = useState<string | null>(null);
   const [startDatePopoverOpen, setStartDatePopoverOpen] = useState(false);
   const [endDatePopoverOpen, setEndDatePopoverOpen] = useState(false);
-  const [timeframe, setTimeframe] = useState<InsightTimeframe>("this_week");
-  const [breakdown, setBreakdown] = useState<InsightBreakdown | "">("");
-  const [selectedMediaId, setSelectedMediaId] = useState<string>("");
+  const [timeframe, setTimeframe] = useState<InsightTimeframe>('this_week');
+  const [breakdown, setBreakdown] = useState<InsightBreakdown | ''>('');
+  const [selectedMediaId, setSelectedMediaId] = useState<string>('');
   const [accountMediaList, setAccountMediaList] = useState<
     Array<{
       id: string;
@@ -264,36 +265,39 @@ export function useInstagramIntegration({
     }>
   >([]);
   const [loadingMedia, setLoadingMedia] = useState(false);
-  const [selectedMediaType, setSelectedMediaType] = useState<string>("ALL");
+  const [selectedMediaType, setSelectedMediaType] = useState<string>('ALL');
   const [urlInputDirty, setUrlInputDirty] = useState(false);
   const [parameterDrafts, setParameterDrafts] = useState<Record<string, string>>({});
-  const [newParamKey, setNewParamKey] = useState("");
-  const [newParamValue, setNewParamValue] = useState("");
-  const [httpQueryParameters, setHttpQueryParameters] = useState<Array<{ key: string; value: string }>>([]);
+  const [newParamKey, setNewParamKey] = useState('');
+  const [newParamValue, setNewParamValue] = useState('');
+  const [httpQueryParameters, setHttpQueryParameters] = useState<
+    Array<{ key: string; value: string }>
+  >([]);
   const [insightReport, setInsightReport] = useState<InsightReport | null>(null);
   const [mediaReport, setMediaReport] = useState<MediaReport | null>(null);
 
   const endpoint: EndpointKey = useMemo(() => {
-    if (selectedEndpointId === "ig_user_id/insights") return "account_insights";
-    if (selectedEndpointId === "ig_user_id/media") return "account_media";
-    if (selectedEndpointId === "ig_user_id/tags") return "tagged_media";
-    return "account_media";
+    if (selectedEndpointId === 'ig_user_id/insights') return 'account_insights';
+    if (selectedEndpointId === 'ig_user_id/media') return 'account_media';
+    if (selectedEndpointId === 'ig_user_id/tags') return 'tagged_media';
+    return 'account_media';
   }, [selectedEndpointId]);
 
   const activeEndpoint = useMemo<EndpointDefinition | undefined>(
     () => getEndpointById(selectedEndpointId),
-    [selectedEndpointId],
+    [selectedEndpointId]
   );
 
-  const isMediaIdType = selectedIdType === "ig_media_id";
-  const isInsightEndpoint =
-    activeEndpoint?.type === "insights" || endpoint === "account_insights";
+  const isMediaIdType = selectedIdType === 'ig_media_id';
+  const isInsightEndpoint = activeEndpoint?.type === 'insights' || endpoint === 'account_insights';
   const isMediaEndpoint =
-    activeEndpoint?.type === "fields" || endpoint === "account_media" || endpoint === "tagged_media";
+    activeEndpoint?.type === 'fields' ||
+    endpoint === 'account_media' ||
+    endpoint === 'tagged_media';
   const hasOAuthConnection = session.facebookConnected && session.accounts.length > 0;
-  const isInstagramOAuthLinked = authMode === "oauth" && hasOAuthConnection;
-  const activeAccountId = selectedAccountIds[0] ?? session.accounts[0]?.id ?? "";
-  const mediaFormat: MediaFormat = "ALL";
+  const isInstagramOAuthLinked = authMode === 'oauth' && hasOAuthConnection;
+  const activeAccountId = selectedAccountIds[0] ?? session.accounts[0]?.id ?? '';
+  const mediaFormat: MediaFormat = 'ALL';
 
   const resolvedSelection = useMemo(
     () =>
@@ -304,31 +308,32 @@ export function useInstagramIntegration({
         timeframe,
         breakdown: breakdown || undefined,
       }),
-    [metrics, period, rangeDays, timeframe, breakdown],
+    [metrics, period, rangeDays, timeframe, breakdown]
   );
 
   const metricKeySet = useMemo(() => new Set(METRIC_OPTIONS.map((item) => item.key)), []);
   const mediaFieldKeySet = useMemo(
     () => new Set(ACCOUNT_MEDIA_FIELD_OPTIONS.map((item) => item.key)),
-    [],
+    []
   );
   const timeframeValueSet = useMemo(() => new Set(TIMEFRAME_OPTIONS.map((item) => item.value)), []);
   const breakdownValueSet = useMemo(() => new Set(Object.keys(BREAKDOWN_LABELS)), []);
 
   const compatibilityWarning = useMemo(
     () =>
-      resolvedSelection.warnings.find((item) =>
-        item.toLowerCase().includes("can't be combined"),
-      ) ?? null,
-    [resolvedSelection.warnings],
+      resolvedSelection.warnings.find((item) => item.toLowerCase().includes("can't be combined")) ??
+      null,
+    [resolvedSelection.warnings]
   );
 
   const selectionWarning = useMemo(
     () =>
       compatibilityWarning ??
-      resolvedSelection.warnings.filter((warning) => !warning.toLowerCase().includes("period"))[0] ??
+      resolvedSelection.warnings.filter(
+        (warning) => !warning.toLowerCase().includes('period')
+      )[0] ??
       null,
-    [compatibilityWarning, resolvedSelection.warnings],
+    [compatibilityWarning, resolvedSelection.warnings]
   );
 
   const idTypeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
@@ -338,7 +343,7 @@ export function useInstagramIntegration({
         label: option.label,
         description: option.description,
       })),
-    [],
+    []
   );
 
   const edgeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
@@ -348,11 +353,11 @@ export function useInstagramIntegration({
         label: option.label,
         description: option.description,
       })),
-    [selectedIdType],
+    [selectedIdType]
   );
 
   const registryValidation = useMemo(() => {
-    if (!activeEndpoint || activeEndpoint.type !== "insights") {
+    if (!activeEndpoint || activeEndpoint.type !== 'insights') {
       return null;
     }
 
@@ -361,7 +366,7 @@ export function useInstagramIntegration({
       metrics,
       period,
       timeframe,
-      breakdown || undefined,
+      breakdown || undefined
     );
   }, [activeEndpoint, metrics, period, timeframe, breakdown]);
 
@@ -403,32 +408,33 @@ export function useInstagramIntegration({
 
   const periodDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
     () => [
-      { value: "day", label: "Daily" },
-      { value: "week", label: "Weekly" },
-      { value: "month", label: "Monthly" },
+      { value: 'day', label: 'Daily' },
+      { value: 'week', label: 'Weekly' },
+      { value: 'month', label: 'Monthly' },
     ],
-    [],
+    []
   );
 
   const timeframeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
     () => TIMEFRAME_OPTIONS.map((option) => ({ value: option.value, label: option.label })),
-    [],
+    []
   );
 
   const dateRangeDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
-    () => DATE_RANGE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label })),
-    [],
+    () =>
+      DATE_RANGE_OPTIONS.map((option) => ({ value: String(option.value), label: option.label })),
+    []
   );
 
   const breakdownDropdownOptions = useMemo<SingleSelectDropdownOption[]>(
     () => [
-      { value: NO_BREAKDOWN_VALUE, label: "No breakdown" },
+      { value: NO_BREAKDOWN_VALUE, label: 'No breakdown' },
       ...resolvedSelection.allowedBreakdowns.map((item) => ({
         value: item,
         label: BREAKDOWN_LABELS[item],
       })),
     ],
-    [resolvedSelection.allowedBreakdowns],
+    [resolvedSelection.allowedBreakdowns]
   );
 
   const requestParameterRows = useMemo<Array<RequestParameterRow>>(() => {
@@ -442,29 +448,29 @@ export function useInstagramIntegration({
 
     if (isMediaEndpoint) {
       return [
-        { key: "fields", value: mediaFields.join(","), required: true },
-        { key: "limit", value: String(mediaLimit), required: true },
+        { key: 'fields', value: mediaFields.join(','), required: true },
+        { key: 'limit', value: String(mediaLimit), required: true },
       ];
     }
 
     const range = unixRangeFromDays(resolvedSelection.rangeDays, customStartDate, customEndDate);
     const rows: RequestParameterRow[] = [
-      { key: "metric", value: resolvedSelection.effectiveMetrics.join(","), required: true },
-      { key: "metric_type", value: resolvedSelection.metricType, required: true },
-      { key: "period", value: resolvedSelection.period, required: true },
+      { key: 'metric', value: resolvedSelection.effectiveMetrics.join(','), required: true },
+      { key: 'metric_type', value: resolvedSelection.metricType, required: true },
+      { key: 'period', value: resolvedSelection.period, required: true },
     ];
 
     if (resolvedSelection.timeframe) {
-      rows.push({ key: "timeframe", value: resolvedSelection.timeframe, required: false });
+      rows.push({ key: 'timeframe', value: resolvedSelection.timeframe, required: false });
     }
 
     if (resolvedSelection.breakdown) {
-      rows.push({ key: "breakdown", value: resolvedSelection.breakdown, required: false });
+      rows.push({ key: 'breakdown', value: resolvedSelection.breakdown, required: false });
     }
 
-    if (resolvedSelection.period === "day") {
-      rows.push({ key: "since", value: String(range.sinceUnix), required: false });
-      rows.push({ key: "until", value: String(range.untilUnix), required: false });
+    if (resolvedSelection.period === 'day') {
+      rows.push({ key: 'since', value: String(range.sinceUnix), required: false });
+      rows.push({ key: 'until', value: String(range.untilUnix), required: false });
     }
 
     return rows;
@@ -480,19 +486,19 @@ export function useInstagramIntegration({
   ]);
 
   const apiUrlPreview = useMemo(() => {
-    const accountId = activeAccountId || "<ig_account_id>";
+    const accountId = activeAccountId || '<ig_account_id>';
 
     if (isMediaIdType && activeEndpoint) {
-      const mediaId = selectedMediaId || "<ig_media_id>";
+      const mediaId = selectedMediaId || '<ig_media_id>';
       const edge = activeEndpoint.edge;
-      if (edge === "insights" && activeEndpoint.metrics) {
+      if (edge === 'insights' && activeEndpoint.metrics) {
         const effectiveMetrics = registryValidation?.effectiveMetrics ?? metrics;
         return buildGraphMediaIdApiUrl({
           mediaId,
-          edge: "insights",
+          edge: 'insights',
           metrics: effectiveMetrics,
-          metricType: registryValidation?.metricType ?? "total_value",
-          period: registryValidation?.resolvedPeriod ?? "lifetime",
+          metricType: registryValidation?.metricType ?? 'total_value',
+          period: registryValidation?.resolvedPeriod ?? 'lifetime',
         });
       }
 
@@ -504,7 +510,7 @@ export function useInstagramIntegration({
     }
 
     if (isMediaEndpoint && !isMediaIdType) {
-      const mediaEndpointType = endpoint === "tagged_media" ? "tagged_media" : "account_media";
+      const mediaEndpointType = endpoint === 'tagged_media' ? 'tagged_media' : 'account_media';
       return buildGraphMediaApiUrl({
         accountId,
         fields: mediaFields,
@@ -550,14 +556,14 @@ export function useInstagramIntegration({
 
     return accountMediaList.map((item) => {
       const typeLabel =
-        item.media_type === "VIDEO"
-          ? "🎬"
-          : item.media_type === "IMAGE"
-            ? "🖼️"
-            : item.media_type === "CAROUSEL_ALBUM"
-              ? "📸"
-              : "📄";
-      const dateLabel = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : "";
+        item.media_type === 'VIDEO'
+          ? '🎬'
+          : item.media_type === 'IMAGE'
+            ? '🖼️'
+            : item.media_type === 'CAROUSEL_ALBUM'
+              ? '📸'
+              : '📄';
+      const dateLabel = item.timestamp ? new Date(item.timestamp).toLocaleDateString() : '';
 
       return {
         value: item.id,
@@ -569,7 +575,7 @@ export function useInstagramIntegration({
 
   const mediaTableFields = useMemo(() => {
     const fields = mediaReport?.query.fields ?? mediaFields;
-    const normalized = Array.from(new Set(["id", ...fields])).filter((item) => item.length > 0);
+    const normalized = Array.from(new Set(['id', ...fields])).filter((item) => item.length > 0);
     return normalized.slice(0, 8);
   }, [mediaFields, mediaReport?.query.fields]);
 
@@ -580,9 +586,9 @@ export function useInstagramIntegration({
           key: `${account.accountId}-${String(item.id ?? index)}`,
           accountHandle: account.accountHandle,
           item,
-        })),
+        }))
       ),
-    [mediaReport?.accounts],
+    [mediaReport?.accounts]
   );
 
   useEffect(() => {
@@ -614,21 +620,21 @@ export function useInstagramIntegration({
       return;
     }
 
-    if (activeEndpoint.type === "insights" && activeEndpoint.defaultMetrics) {
+    if (activeEndpoint.type === 'insights' && activeEndpoint.defaultMetrics) {
       setMetrics(activeEndpoint.defaultMetrics);
     }
 
-    if (activeEndpoint.type === "fields" && activeEndpoint.defaultFields) {
+    if (activeEndpoint.type === 'fields' && activeEndpoint.defaultFields) {
       setMediaFields(activeEndpoint.defaultFields);
     }
 
-    setSelectedMediaType("ALL");
+    setSelectedMediaType('ALL');
   }, [activeEndpoint]);
 
   useEffect(() => {
     if (!isMediaIdType) {
       setAccountMediaList([]);
-      setSelectedMediaId("");
+      setSelectedMediaId('');
       return;
     }
 
@@ -639,13 +645,13 @@ export function useInstagramIntegration({
     let cancelled = false;
     setLoadingMedia(true);
 
-    fetchWithAuth("/api/media", {
-      method: "POST",
+    fetchWithAuth('/api/media', {
+      method: 'POST',
       body: JSON.stringify({
         accountInputs: [],
         selectedAccountIds: [activeAccountId],
-        endpoint: "account_media",
-        fields: ["id", "media_type", "media_product_type", "permalink", "caption", "timestamp"],
+        endpoint: 'account_media',
+        fields: ['id', 'media_type', 'media_product_type', 'permalink', 'caption', 'timestamp'],
         limit: 50,
       }),
     })
@@ -658,17 +664,19 @@ export function useInstagramIntegration({
         const items = data?.accounts?.[0]?.items ?? [];
         setAccountMediaList(
           items.map((item: Record<string, unknown>) => ({
-            id: String(item.id ?? ""),
-            media_type: String(item.media_type ?? "UNKNOWN"),
-            media_product_type: item.media_product_type ? String(item.media_product_type) : undefined,
+            id: String(item.id ?? ''),
+            media_type: String(item.media_type ?? 'UNKNOWN'),
+            media_product_type: item.media_product_type
+              ? String(item.media_product_type)
+              : undefined,
             permalink: item.permalink ? String(item.permalink) : undefined,
             caption: item.caption ? String(item.caption).slice(0, 80) : undefined,
             timestamp: item.timestamp ? String(item.timestamp) : undefined,
-          })),
+          }))
         );
 
         if (items.length > 0 && !selectedMediaId) {
-          setSelectedMediaId(String(items[0].id ?? ""));
+          setSelectedMediaId(String(items[0].id ?? ''));
         }
       })
       .catch(() => {
@@ -711,12 +719,12 @@ export function useInstagramIntegration({
 
   useEffect(() => {
     if (breakdown && !resolvedSelection.allowedBreakdowns.includes(breakdown)) {
-      setBreakdown("");
+      setBreakdown('');
     }
   }, [breakdown, resolvedSelection.allowedBreakdowns]);
 
   useEffect(() => {
-    if (rangeDays !== "custom") {
+    if (rangeDays !== 'custom') {
       setCustomStartDate(undefined);
       setCustomEndDate(undefined);
       setCustomDateError(null);
@@ -744,11 +752,11 @@ export function useInstagramIntegration({
 
       try {
         const parsed = new URL(singleUrl);
-        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+        if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
           return previousValue;
         }
 
-        parsed.search = "";
+        parsed.search = '';
         for (const parameter of httpQueryParameters) {
           const key = parameter.key.trim();
           if (!key) {
@@ -768,11 +776,11 @@ export function useInstagramIntegration({
 
   const resetRequiredParameter = (key: string) => {
     if (isMediaEndpoint) {
-      if (key === "fields") {
+      if (key === 'fields') {
         setMediaFields(DEFAULT_ACCOUNT_MEDIA_FIELDS);
       }
 
-      if (key === "limit") {
+      if (key === 'limit') {
         setMediaLimit(25);
       }
 
@@ -780,11 +788,11 @@ export function useInstagramIntegration({
     }
 
     switch (key) {
-      case "metric":
+      case 'metric':
         setMetrics(DEFAULT_INSIGHT_METRICS);
         break;
-      case "period":
-        setPeriod("day");
+      case 'period':
+        setPeriod('day');
         break;
       default:
         break;
@@ -803,7 +811,7 @@ export function useInstagramIntegration({
 
       setHttpQueryParameters((previous) => {
         const next = previous.filter(
-          (item) => item.key.trim().toLowerCase() !== normalizedKey.toLowerCase(),
+          (item) => item.key.trim().toLowerCase() !== normalizedKey.toLowerCase()
         );
         next.push({ key: normalizedKey, value });
         return next;
@@ -816,13 +824,13 @@ export function useInstagramIntegration({
         return;
       }
 
-      if (key === "fields") {
+      if (key === 'fields') {
         const nextFields = parseCsvValues(value, mediaFieldKeySet);
         setMediaFields(nextFields.length > 0 ? nextFields : DEFAULT_ACCOUNT_MEDIA_FIELDS);
         return;
       }
 
-      if (key === "limit") {
+      if (key === 'limit') {
         const parsedLimit = Number(value);
         if (!Number.isFinite(parsedLimit)) {
           setMediaLimit(25);
@@ -839,24 +847,24 @@ export function useInstagramIntegration({
       return;
     }
 
-    if (key === "metric") {
+    if (key === 'metric') {
       const nextMetrics = parseCsvValues(value, metricKeySet);
       setMetrics(nextMetrics.length > 0 ? nextMetrics : DEFAULT_INSIGHT_METRICS);
       return;
     }
 
-    if (key === "period") {
-      if (value === "day" || value === "week" || value === "month") {
+    if (key === 'period') {
+      if (value === 'day' || value === 'week' || value === 'month') {
         setPeriod(value);
       } else {
-        setPeriod("day");
+        setPeriod('day');
       }
       return;
     }
 
-    if (key === "timeframe") {
+    if (key === 'timeframe') {
       if (!value || !timeframeValueSet.has(value as InsightTimeframe)) {
-        setTimeframe("this_week");
+        setTimeframe('this_week');
         return;
       }
 
@@ -864,9 +872,9 @@ export function useInstagramIntegration({
       return;
     }
 
-    if (key === "breakdown") {
+    if (key === 'breakdown') {
       if (!value || !breakdownValueSet.has(value)) {
-        setBreakdown("");
+        setBreakdown('');
         return;
       }
 
@@ -874,7 +882,7 @@ export function useInstagramIntegration({
       return;
     }
 
-    if (key === "since") {
+    if (key === 'since') {
       const parsedDate = parseUnixDate(value);
       if (!parsedDate) {
         setCustomStartDate(undefined);
@@ -882,7 +890,7 @@ export function useInstagramIntegration({
         return;
       }
 
-      setRangeDays("custom");
+      setRangeDays('custom');
       setCustomStartDate(parsedDate);
       if (customEndDate) {
         setCustomDateError(validateCustomDateRange(parsedDate, customEndDate));
@@ -890,7 +898,7 @@ export function useInstagramIntegration({
       return;
     }
 
-    if (key === "until") {
+    if (key === 'until') {
       const parsedDate = parseUnixDate(value);
       if (!parsedDate) {
         setCustomEndDate(undefined);
@@ -898,7 +906,7 @@ export function useInstagramIntegration({
         return;
       }
 
-      setRangeDays("custom");
+      setRangeDays('custom');
       setCustomEndDate(parsedDate);
       if (customStartDate) {
         setCustomDateError(validateCustomDateRange(customStartDate, parsedDate));
@@ -910,7 +918,7 @@ export function useInstagramIntegration({
     if (!isInstagramOAuthLinked) {
       const normalizedKey = key.trim().toLowerCase();
       setHttpQueryParameters((previous) =>
-        previous.filter((item) => item.key.trim().toLowerCase() !== normalizedKey),
+        previous.filter((item) => item.key.trim().toLowerCase() !== normalizedKey)
       );
       return;
     }
@@ -921,24 +929,24 @@ export function useInstagramIntegration({
     }
 
     if (isMediaEndpoint) {
-      if (key === "fields") {
+      if (key === 'fields') {
         setMediaFields(DEFAULT_ACCOUNT_MEDIA_FIELDS);
       }
 
       return;
     }
 
-    if (key === "timeframe") {
-      setTimeframe("this_week");
+    if (key === 'timeframe') {
+      setTimeframe('this_week');
       return;
     }
 
-    if (key === "breakdown") {
-      setBreakdown("");
+    if (key === 'breakdown') {
+      setBreakdown('');
       return;
     }
 
-    if (key === "since" || key === "until") {
+    if (key === 'since' || key === 'until') {
       setRangeDays(7);
       setCustomStartDate(undefined);
       setCustomEndDate(undefined);
@@ -966,8 +974,8 @@ export function useInstagramIntegration({
     }
 
     applyParameter(newParamKey, newParamValue);
-    setNewParamKey("");
-    setNewParamValue("");
+    setNewParamKey('');
+    setNewParamValue('');
   };
 
   const setEditableUrlFromInput = (value: string) => {
@@ -983,8 +991,8 @@ export function useInstagramIntegration({
 
     try {
       const parsed = new URL(singleUrl);
-      if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-        throw new Error("Only http:// and https:// URLs are supported.");
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new Error('Only http:// and https:// URLs are supported.');
       }
 
       if (!isInstagramOAuthLinked) {
@@ -1002,7 +1010,7 @@ export function useInstagramIntegration({
           Array.from(parsedParams.entries()).map(([paramKey, paramValue]) => ({
             key: paramKey,
             value: paramValue,
-          })),
+          }))
         );
         setEditableUrl(parsed.toString());
         setUrlInputDirty(false);
@@ -1010,26 +1018,26 @@ export function useInstagramIntegration({
       }
     } catch (reason) {
       return {
-        error: reason instanceof Error ? reason.message : "Invalid URL.",
+        error: reason instanceof Error ? reason.message : 'Invalid URL.',
       };
     }
 
     const fallbackUrl = apiUrlPreview || `${GRAPH_BASE_URL}<ig_account_id>/insights`;
     const normalizedUrl = normalizeGraphUrl(editableUrl, fallbackUrl);
-    const pathParts = normalizedUrl.pathname.split("/").filter(Boolean);
+    const pathParts = normalizedUrl.pathname.split('/').filter(Boolean);
     const versionIndex = pathParts.findIndex((part) => /^v\d+\.\d+$/i.test(part));
     const scopedPath = versionIndex >= 0 ? pathParts.slice(versionIndex + 1) : pathParts;
     const [accountIdFromPath, endpointPath] = scopedPath;
 
-    if (endpointPath === "insights") {
-      setSelectedIdType("ig_user_id");
-      setSelectedEndpointId("ig_user_id/insights");
-    } else if (endpointPath === "media") {
-      setSelectedIdType("ig_user_id");
-      setSelectedEndpointId("ig_user_id/media");
-    } else if (endpointPath === "tags") {
-      setSelectedIdType("ig_user_id");
-      setSelectedEndpointId("ig_user_id/tags");
+    if (endpointPath === 'insights') {
+      setSelectedIdType('ig_user_id');
+      setSelectedEndpointId('ig_user_id/insights');
+    } else if (endpointPath === 'media') {
+      setSelectedIdType('ig_user_id');
+      setSelectedEndpointId('ig_user_id/media');
+    } else if (endpointPath === 'tags') {
+      setSelectedIdType('ig_user_id');
+      setSelectedEndpointId('ig_user_id/tags');
     }
 
     if (accountIdFromPath) {
@@ -1041,49 +1049,47 @@ export function useInstagramIntegration({
 
     const params = normalizedUrl.searchParams;
 
-    if (endpointPath === "media" || endpointPath === "tags") {
-      const fieldsParam = getFirstQueryValue(params, "fields") ?? "";
+    if (endpointPath === 'media' || endpointPath === 'tags') {
+      const fieldsParam = getFirstQueryValue(params, 'fields') ?? '';
       const parsedFields = parseCsvValues(fieldsParam, mediaFieldKeySet);
       setMediaFields(parsedFields.length > 0 ? parsedFields : DEFAULT_ACCOUNT_MEDIA_FIELDS);
 
-      const limitParam = getFirstQueryValue(params, "limit");
+      const limitParam = getFirstQueryValue(params, 'limit');
       const parsedLimit = Number(limitParam);
       setMediaLimit(
-        Number.isFinite(parsedLimit)
-          ? Math.min(100, Math.max(1, Math.round(parsedLimit)))
-          : 25,
+        Number.isFinite(parsedLimit) ? Math.min(100, Math.max(1, Math.round(parsedLimit))) : 25
       );
     }
 
-    if (endpointPath === "insights") {
-      const metricParam = getFirstQueryValue(params, "metric") ?? "";
+    if (endpointPath === 'insights') {
+      const metricParam = getFirstQueryValue(params, 'metric') ?? '';
       const parsedMetrics = parseCsvValues(metricParam, metricKeySet);
       setMetrics(parsedMetrics.length > 0 ? parsedMetrics : DEFAULT_INSIGHT_METRICS);
 
-      const periodParam = getFirstQueryValue(params, "period");
-      if (periodParam === "day" || periodParam === "week" || periodParam === "month") {
+      const periodParam = getFirstQueryValue(params, 'period');
+      if (periodParam === 'day' || periodParam === 'week' || periodParam === 'month') {
         setPeriod(periodParam);
       } else {
-        setPeriod("day");
+        setPeriod('day');
       }
 
-      const timeframeParam = getFirstQueryValue(params, "timeframe");
+      const timeframeParam = getFirstQueryValue(params, 'timeframe');
       if (timeframeParam && timeframeValueSet.has(timeframeParam as InsightTimeframe)) {
         setTimeframe(timeframeParam as InsightTimeframe);
       }
 
-      const breakdownParam = getFirstQueryValue(params, "breakdown");
+      const breakdownParam = getFirstQueryValue(params, 'breakdown');
       setBreakdown(
         breakdownParam && breakdownValueSet.has(breakdownParam)
           ? (breakdownParam as InsightBreakdown)
-          : "",
+          : ''
       );
 
-      const parsedSinceDate = parseUnixDate(getFirstQueryValue(params, "since"));
-      const parsedUntilDate = parseUnixDate(getFirstQueryValue(params, "until"));
+      const parsedSinceDate = parseUnixDate(getFirstQueryValue(params, 'since'));
+      const parsedUntilDate = parseUnixDate(getFirstQueryValue(params, 'until'));
 
       if (parsedSinceDate || parsedUntilDate) {
-        setRangeDays("custom");
+        setRangeDays('custom');
         setCustomStartDate(parsedSinceDate);
         setCustomEndDate(parsedUntilDate);
         setCustomDateError(validateCustomDateRange(parsedSinceDate, parsedUntilDate));
@@ -1102,10 +1108,10 @@ export function useInstagramIntegration({
 
   const runOauth = async (): Promise<string> => {
     if (!isInstagramOAuthLinked) {
-      throw new Error("Instagram Builder is only linked when OAuth mode is active.");
+      throw new Error('Instagram Builder is only linked when OAuth mode is active.');
     }
 
-    if (isInsightEndpoint && rangeDays === "custom") {
+    if (isInsightEndpoint && rangeDays === 'custom') {
       const dateError = validateCustomDateRange(customStartDate, customEndDate);
       if (dateError) {
         throw new Error(dateError);
@@ -1118,11 +1124,11 @@ export function useInstagramIntegration({
     }
 
     if (selectedIds.length === 0) {
-      throw new Error("No Instagram account available for this session.");
+      throw new Error('No Instagram account available for this session.');
     }
 
-    const response = await fetchWithAuth(isInsightEndpoint ? "/api/insights" : "/api/media", {
-      method: "POST",
+    const response = await fetchWithAuth(isInsightEndpoint ? '/api/insights' : '/api/media', {
+      method: 'POST',
       body: JSON.stringify(
         isInsightEndpoint
           ? {
@@ -1131,8 +1137,8 @@ export function useInstagramIntegration({
               metrics,
               period,
               rangeDays,
-              customStartDate: customStartDate ? format(customStartDate, "yyyy-MM-dd") : undefined,
-              customEndDate: customEndDate ? format(customEndDate, "yyyy-MM-dd") : undefined,
+              customStartDate: customStartDate ? format(customStartDate, 'yyyy-MM-dd') : undefined,
+              customEndDate: customEndDate ? format(customEndDate, 'yyyy-MM-dd') : undefined,
               timeframe,
               breakdown: breakdown || undefined,
               mediaFormat,
@@ -1143,7 +1149,7 @@ export function useInstagramIntegration({
               endpoint,
               fields: mediaFields,
               limit: mediaLimit,
-            },
+            }
       ),
     });
 
@@ -1151,7 +1157,7 @@ export function useInstagramIntegration({
     if (!response.ok) {
       throw new Error(
         payload?.error?.message ??
-          (isInsightEndpoint ? "Failed to fetch insight data." : "Failed to fetch media data."),
+          (isInsightEndpoint ? 'Failed to fetch insight data.' : 'Failed to fetch media data.')
       );
     }
 
@@ -1164,13 +1170,13 @@ export function useInstagramIntegration({
         return `Insight data fetched with warnings: ${nextReport.query.warnings[0]}`;
       }
 
-      return "Insight data fetched successfully.";
+      return 'Insight data fetched successfully.';
     }
 
     const nextReport = payload as MediaReport;
     setMediaReport(nextReport);
     setInsightReport(null);
-    return "Account media data fetched successfully.";
+    return 'Account media data fetched successfully.';
   };
 
   const clearReports = () => {
@@ -1186,11 +1192,11 @@ export function useInstagramIntegration({
     if (insightReport) {
       const metricsFromQuery = insightReport.query.metrics;
       const metricsFromResults = insightReport.accounts.flatMap((account) =>
-        account.metricResults.map((metricResult) => metricResult.metric),
+        account.metricResults.map((metricResult) => metricResult.metric)
       );
       const allMetrics = Array.from(new Set([...metricsFromQuery, ...metricsFromResults]));
 
-      return ["generatedAt", "endTime", "metric", "period", "totalValue", ...allMetrics];
+      return ['generatedAt', 'endTime', 'metric', 'period', 'totalValue', ...allMetrics];
     }
 
     return [];
@@ -1205,15 +1211,15 @@ export function useInstagramIntegration({
       return `instagram:${mediaReport.accounts[0].accountId}`;
     }
 
-    return "instagram:unknown";
+    return 'instagram:unknown';
   };
 
   const formatMediaCellValue = (value: unknown) => {
     if (value === null || value === undefined) {
-      return "-";
+      return '-';
     }
 
-    if (typeof value === "object") {
+    if (typeof value === 'object') {
       return JSON.stringify(value);
     }
 
@@ -1311,7 +1317,7 @@ export function useInstagramIntegration({
       timeframeDropdownOptions,
       breakdownDropdownOptions,
       dateRangeDropdownOptions,
-    ],
+    ]
   );
 
   return {

@@ -1,29 +1,32 @@
-import type { Metadata } from "next";
-import { IBM_Plex_Mono, Manrope, Geist } from "next/font/google";
-import "./globals.css";
-import "react-notion-x/src/styles.css";
-import "react-toastify/dist/ReactToastify.css";
-import { cn } from "@/lib/utils";
-import { initializeServices } from "@/lib/services/factory";
-import { AppToastContainer } from "@/components/ui/app-toast-container";
+import type { Metadata } from 'next';
+import { IBM_Plex_Mono, Manrope, Geist } from 'next/font/google';
+import '@/styles/globals.css';
+import '@/styles/notion.css';
+import 'react-notion-x/src/styles.css';
+import 'prismjs/themes/prism-tomorrow.css';
+import 'katex/dist/katex.min.css';
+import 'react-toastify/dist/ReactToastify.css';
+import { cn } from '@/lib/utils';
+import { initializeServices } from '@/lib/services/factory';
+import { AppToastContainer } from '@/components/ui/app-toast-container';
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
 const manrope = Manrope({
-  variable: "--font-manrope",
-  subsets: ["latin"],
+  variable: '--font-manrope',
+  subsets: ['latin'],
 });
 
 const mono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  weight: ["400", "500"],
-  subsets: ["latin"],
+  variable: '--font-plex-mono',
+  weight: ['400', '500'],
+  subsets: ['latin'],
 });
 
 export const metadata: Metadata = {
-  title: "Ana Social • Marketing Insight Console",
+  title: 'Ana Social • Marketing Insight Console',
   description:
-    "Notion-style analytics console for Facebook and Instagram insight extraction, persistence, and n8n automation export.",
+    'Notion-style analytics console for Facebook and Instagram insight extraction, persistence, and n8n automation export.',
 };
 
 // Initialize services on startup
@@ -35,7 +38,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={cn("h-full", "antialiased", manrope.variable, mono.variable, "font-sans", geist.variable)}>
+    <html
+      lang="en"
+      className={cn(
+        'h-full',
+        'antialiased',
+        manrope.variable,
+        mono.variable,
+        'font-sans',
+        geist.variable
+      )}
+    >
       <body className="min-h-full flex flex-col">
         {children}
         <AppToastContainer />

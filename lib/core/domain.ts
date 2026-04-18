@@ -1,29 +1,40 @@
-export type InsightPeriod = "day" | "week" | "month" | "lifetime";
+export type InsightPeriod = 'day' | 'week' | 'month' | 'lifetime';
 
-export type InsightMetricType = "total_value" | "time_series";
+export type InsightMetricType = 'total_value' | 'time_series';
 
-export type InsightTimeframe = "this_week" | "this_month" | "last_month" | "last_14_days" | "last_30_days" | "last_90_days" | "prev_month";
+export type InsightTimeframe =
+  | 'this_week'
+  | 'this_month'
+  | 'last_month'
+  | 'last_14_days'
+  | 'last_30_days'
+  | 'last_90_days'
+  | 'prev_month';
 
 export type InsightBreakdown =
-  | "contact_button_type"
-  | "follow_type"
-  | "follower_type"
-  | "media_product_type"
-  | "age"
-  | "city"
-  | "country"
-  | "gender";
+  | 'contact_button_type'
+  | 'follow_type'
+  | 'follower_type'
+  | 'media_product_type'
+  | 'age'
+  | 'city'
+  | 'country'
+  | 'gender';
 
-export type InsightRangeDays = 1 | 7 | 14 | 30 | "today" | "yesterday" | "this_month" | "last_month" | "custom";
+export type InsightRangeDays =
+  | 1
+  | 7
+  | 14
+  | 30
+  | 'today'
+  | 'yesterday'
+  | 'this_month'
+  | 'last_month'
+  | 'custom';
 
-export type MediaFormatFilter =
-  | "ALL"
-  | "IMAGE"
-  | "VIDEO"
-  | "REEL"
-  | "CAROUSEL_ALBUM";
+export type MediaFormatFilter = 'ALL' | 'IMAGE' | 'VIDEO' | 'REEL' | 'CAROUSEL_ALBUM';
 
-export type AutoScheduleFrequency = "daily" | "weekly" | "monthly";
+export type AutoScheduleFrequency = 'daily' | 'weekly' | 'monthly';
 
 export interface AutoScheduleSettings {
   enabled: boolean;
@@ -49,7 +60,7 @@ export interface GraphInsightsQuery {
   requestedMetrics: string[];
   effectiveMetrics: string[];
   metricType: InsightMetricType;
-  period: "day" | "lifetime";
+  period: 'day' | 'lifetime';
   timeframe?: InsightTimeframe;
   breakdown?: InsightBreakdown;
   warnings: string[];
@@ -110,7 +121,7 @@ export interface MediaPerformance {
 export interface MarketingRecommendation {
   title: string;
   summary: string;
-  confidence: "high" | "medium" | "low";
+  confidence: 'high' | 'medium' | 'low';
 }
 
 export interface AccountInsightsResult {
@@ -133,7 +144,7 @@ export interface MarketingInsightReport {
     rangeDays: InsightRangeDays;
     metrics: string[];
     metricType: InsightMetricType;
-    period: "day" | "lifetime";
+    period: 'day' | 'lifetime';
     timeframe?: InsightTimeframe;
     breakdown?: InsightBreakdown;
     mediaFormat: MediaFormatFilter;

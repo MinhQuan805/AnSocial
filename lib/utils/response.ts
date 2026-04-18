@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
 
-import { AppError } from "@/lib/core/errors";
+import { AppError } from '@/lib/core/errors';
 
 export function ok<T>(payload: T, status = 200): NextResponse {
   return NextResponse.json(payload, { status });
@@ -15,17 +15,17 @@ export function fail(error: unknown): NextResponse {
           message: error.message,
         },
       },
-      { status: error.status },
+      { status: error.status }
     );
   }
 
   return NextResponse.json(
     {
       error: {
-        code: "UNKNOWN_ERROR",
-        message: "Unexpected server error.",
+        code: 'UNKNOWN_ERROR',
+        message: 'Unexpected server error.',
       },
     },
-    { status: 500 },
+    { status: 500 }
   );
 }

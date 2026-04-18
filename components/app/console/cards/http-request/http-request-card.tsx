@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import type { DragEvent } from "react";
+import type { DragEvent } from 'react';
 import {
   CheckCircle2,
   CircleAlert,
@@ -10,33 +10,42 @@ import {
   Play,
   Plus,
   X,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { SingleSelectDropdownField, type SingleSelectDropdownOption } from "@/components/app/console/forms/single-select-dropdown-field";
-import { IntegrationPanel } from "@/components/app/console/forms/integration-panel";
-import type { RequestParameterRow, SessionView, InsightReport, MediaReport, HttpRequestReport } from "@/components/app/console/types";
-import type { AutoScheduleSettings } from "@/lib/core/domain";
-import { getMappingExpressionData, insertTextAtSelection } from "@/lib/utils/json-mapping";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  SingleSelectDropdownField,
+  type SingleSelectDropdownOption,
+} from '@/components/app/console/forms/single-select-dropdown-field';
+import { IntegrationPanel } from '@/components/app/console/forms/integration-panel';
+import type {
+  RequestParameterRow,
+  SessionView,
+  InsightReport,
+  MediaReport,
+  HttpRequestReport,
+} from '@/components/app/console/types';
+import type { AutoScheduleSettings } from '@/lib/core/domain';
+import { getMappingExpressionData, insertTextAtSelection } from '@/lib/utils/json-mapping';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE"] as const;
+const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'] as const;
 const METHOD_OPTIONS: SingleSelectDropdownOption[] = HTTP_METHODS.map((method) => ({
   value: method,
   label: method,
 }));
 
 interface HttpRequestCardProps {
-  queryTab: "parameters" | "headers" | "body" | "authorization";
-  setQueryTab: (value: "parameters" | "headers" | "body" | "authorization") => void;
+  queryTab: 'parameters' | 'headers' | 'body' | 'authorization';
+  setQueryTab: (value: 'parameters' | 'headers' | 'body' | 'authorization') => void;
   requestMethod: HttpMethod;
   setRequestMethod: (value: HttpMethod) => void;
   isOAuthMode: boolean;
@@ -60,12 +69,12 @@ interface HttpRequestCardProps {
   setNewHeaderValue: (value: string) => void;
   addCustomHeader: () => void;
   removeCustomHeader: (key: string) => void;
-  bodyMode: "json" | "form-data" | "x-www-form-urlencoded";
-  setBodyMode: (value: "json" | "form-data" | "x-www-form-urlencoded") => void;
+  bodyMode: 'json' | 'form-data' | 'x-www-form-urlencoded';
+  setBodyMode: (value: 'json' | 'form-data' | 'x-www-form-urlencoded') => void;
   requestBody: string;
   setRequestBody: (value: string) => void;
-  authMode: "oauth" | "token" | "basic";
-  setAuthMode: (value: "oauth" | "token" | "basic") => void;
+  authMode: 'oauth' | 'token' | 'basic';
+  setAuthMode: (value: 'oauth' | 'token' | 'basic') => void;
   hasOAuthConnection: boolean;
   bearerToken: string;
   setBearerToken: (value: string) => void;
@@ -92,11 +101,13 @@ interface HttpRequestCardProps {
   setAutoSchedule: (value: AutoScheduleSettings) => void;
   saveScheduleSettings: () => Promise<void>;
   scheduleSaving: boolean;
-  handleRefreshPages: (pages: Array<{
-    id: string;
-    title: string;
-    databases?: Array<{ id: string; title: string; parentPageId?: string | null }>;
-  }>) => void;
+  handleRefreshPages: (
+    pages: Array<{
+      id: string;
+      title: string;
+      databases?: Array<{ id: string; title: string; parentPageId?: string | null }>;
+    }>
+  ) => void;
   handleDatabaseCreated: (database: { id: string; title: string; parentPageId: string }) => void;
   saveToNotion: boolean;
   setSaveToNotion: (value: boolean) => void;
@@ -176,7 +187,7 @@ export function HttpRequestCard({
   const dropMappedExpression = (
     event: DragEvent<HTMLInputElement | HTMLTextAreaElement>,
     currentValue: string,
-    onChangeValue: (value: string) => void,
+    onChangeValue: (value: string) => void
   ) => {
     event.preventDefault();
     const expression = getMappingExpressionData(event.dataTransfer);
@@ -188,7 +199,7 @@ export function HttpRequestCard({
       currentValue,
       expression,
       event.currentTarget.selectionStart,
-      event.currentTarget.selectionEnd,
+      event.currentTarget.selectionEnd
     );
 
     onChangeValue(nextValue);
@@ -218,7 +229,7 @@ export function HttpRequestCard({
               }}
               onBlur={syncFromUrlInput}
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
+                if (event.key === 'Enter') {
                   event.preventDefault();
                   syncFromUrlInput();
                 }
@@ -231,15 +242,23 @@ export function HttpRequestCard({
         <Tabs
           value={queryTab}
           onValueChange={(value) =>
-            setQueryTab(value as "parameters" | "headers" | "body" | "authorization")
+            setQueryTab(value as 'parameters' | 'headers' | 'body' | 'authorization')
           }
           className="overflow-hidden rounded-lg border border-border/70"
         >
           <TabsList className="grid h-auto w-full grid-cols-4 rounded-none bg-muted/40 p-0">
-            <TabsTrigger value="parameters" className="rounded-none py-2.5 text-sm">Parameters</TabsTrigger>
-            <TabsTrigger value="headers" className="rounded-none py-2.5 text-sm">Headers</TabsTrigger>
-            <TabsTrigger value="body" className="rounded-none py-2.5 text-sm">Body</TabsTrigger>
-            <TabsTrigger value="authorization" className="rounded-none py-2.5 text-sm">Authorization</TabsTrigger>
+            <TabsTrigger value="parameters" className="rounded-none py-2.5 text-sm">
+              Parameters
+            </TabsTrigger>
+            <TabsTrigger value="headers" className="rounded-none py-2.5 text-sm">
+              Headers
+            </TabsTrigger>
+            <TabsTrigger value="body" className="rounded-none py-2.5 text-sm">
+              Body
+            </TabsTrigger>
+            <TabsTrigger value="authorization" className="rounded-none py-2.5 text-sm">
+              Authorization
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="parameters" className="mt-0 space-y-3 px-3 py-3">
@@ -256,16 +275,19 @@ export function HttpRequestCard({
                   }
                   onDragOver={allowMappingDrop}
                   onDrop={(event) =>
-                    dropMappedExpression(event, parameterDrafts[item.key] ?? item.value, (nextValue) =>
-                      setParameterDrafts({
-                        ...parameterDrafts,
-                        [item.key]: nextValue,
-                      }),
+                    dropMappedExpression(
+                      event,
+                      parameterDrafts[item.key] ?? item.value,
+                      (nextValue) =>
+                        setParameterDrafts({
+                          ...parameterDrafts,
+                          [item.key]: nextValue,
+                        })
                     )
                   }
                   onBlur={() => commitParameterDraft(item.key)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") {
+                    if (event.key === 'Enter') {
                       event.preventDefault();
                       commitParameterDraft(item.key);
                     }
@@ -299,7 +321,7 @@ export function HttpRequestCard({
                 onDragOver={allowMappingDrop}
                 onDrop={(event) => dropMappedExpression(event, newParamValue, setNewParamValue)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  if (event.key === 'Enter') {
                     event.preventDefault();
                     addParameter();
                   }
@@ -310,14 +332,19 @@ export function HttpRequestCard({
                 variant="outline"
                 className="h-10 gap-1.5 px-3"
                 onClick={() => {
-                  setNewParamKey("");
-                  setNewParamValue("");
+                  setNewParamKey('');
+                  setNewParamValue('');
                 }}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <Button type="button" variant="outline" className="h-10 gap-1.5 px-3" onClick={addParameter}>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 gap-1.5 px-3"
+              onClick={addParameter}
+            >
               <Plus className="h-4 w-4" />
               Add
             </Button>
@@ -355,7 +382,7 @@ export function HttpRequestCard({
                 onDragOver={allowMappingDrop}
                 onDrop={(event) => dropMappedExpression(event, newHeaderValue, setNewHeaderValue)}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  if (event.key === 'Enter') {
                     event.preventDefault();
                     addCustomHeader();
                   }
@@ -366,14 +393,19 @@ export function HttpRequestCard({
                 variant="outline"
                 className="h-10 gap-1.5 px-3"
                 onClick={() => {
-                  setNewHeaderKey("");
-                  setNewHeaderValue("");
+                  setNewHeaderKey('');
+                  setNewHeaderValue('');
                 }}
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <Button type="button" variant="outline" className="h-10 gap-1.5 px-3" onClick={addCustomHeader}>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-10 gap-1.5 px-3"
+              onClick={addCustomHeader}
+            >
               <Plus className="h-4 w-4" />
               Add
             </Button>
@@ -381,18 +413,32 @@ export function HttpRequestCard({
 
           <TabsContent value="body" className="mt-0 space-y-3 px-3 py-3">
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="lg" variant={bodyMode === "json" ? "default" : "outline"} onClick={() => setBodyMode("json")}>JSON</Button>
-              <Button type="button" size="lg" variant={bodyMode === "form-data" ? "default" : "outline"} onClick={() => setBodyMode("form-data")}>form-data</Button>
               <Button
                 type="button"
                 size="lg"
-                variant={bodyMode === "x-www-form-urlencoded" ? "default" : "outline"}
-                onClick={() => setBodyMode("x-www-form-urlencoded")}
+                variant={bodyMode === 'json' ? 'default' : 'outline'}
+                onClick={() => setBodyMode('json')}
+              >
+                JSON
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant={bodyMode === 'form-data' ? 'default' : 'outline'}
+                onClick={() => setBodyMode('form-data')}
+              >
+                form-data
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant={bodyMode === 'x-www-form-urlencoded' ? 'default' : 'outline'}
+                onClick={() => setBodyMode('x-www-form-urlencoded')}
               >
                 x-www-form-urlencoded
               </Button>
             </div>
-            {requestMethod === "GET" ? (
+            {requestMethod === 'GET' ? (
               <Textarea
                 readOnly
                 placeholder="GET request does not include a request body."
@@ -410,7 +456,7 @@ export function HttpRequestCard({
                 onChange={(event) => setRequestBody(event.target.value)}
                 onDragOver={allowMappingDrop}
                 onDrop={(event) => dropMappedExpression(event, requestBody, setRequestBody)}
-                placeholder={bodyMode === "json" ? "{\n  \"key\": \"value\"\n}" : "key=value"}
+                placeholder={bodyMode === 'json' ? '{\n  "key": "value"\n}' : 'key=value'}
                 className="min-h-32 text-sm"
               />
             )}
@@ -418,20 +464,43 @@ export function HttpRequestCard({
 
           <TabsContent value="authorization" className="mt-0 space-y-3 px-3 py-3">
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="lg" variant={authMode === "oauth" ? "default" : "outline"} onClick={() => setAuthMode("oauth")}>OAuth</Button>
-              <Button type="button" size="lg" variant={authMode === "token" ? "default" : "outline"} onClick={() => setAuthMode("token")}>Token</Button>
-              <Button type="button" size="lg" variant={authMode === "basic" ? "default" : "outline"} onClick={() => setAuthMode("basic")}>Basic</Button>
+              <Button
+                type="button"
+                size="lg"
+                variant={authMode === 'oauth' ? 'default' : 'outline'}
+                onClick={() => setAuthMode('oauth')}
+              >
+                OAuth
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant={authMode === 'token' ? 'default' : 'outline'}
+                onClick={() => setAuthMode('token')}
+              >
+                Token
+              </Button>
+              <Button
+                type="button"
+                size="lg"
+                variant={authMode === 'basic' ? 'default' : 'outline'}
+                onClick={() => setAuthMode('basic')}
+              >
+                Basic
+              </Button>
             </div>
 
-            {authMode === "oauth" ? (
+            {authMode === 'oauth' ? (
               <div className="space-y-3">
                 <Alert className="border-border bg-muted/30 text-foreground">
-                  <AlertTitle>{hasOAuthConnection ? "OAuth session ready" : "OAuth session not connected"}</AlertTitle>
+                  <AlertTitle>
+                    {hasOAuthConnection ? 'OAuth session ready' : 'OAuth session not connected'}
+                  </AlertTitle>
                 </Alert>
               </div>
             ) : null}
 
-            {authMode === "token" ? (
+            {authMode === 'token' ? (
               <Alert className="border-border text-foreground">
                 <p className="font-bold text-lg">Token Authentication</p>
                 <Input
@@ -445,7 +514,7 @@ export function HttpRequestCard({
               </Alert>
             ) : null}
 
-            {authMode === "basic" ? (
+            {authMode === 'basic' ? (
               <Alert className="border-border text-foreground">
                 <p className="font-bold text-lg">Basic Authentication</p>
                 <AlertDescription className="space-y-2">
@@ -509,7 +578,11 @@ export function HttpRequestCard({
                 disabled={saving || (!insightReport && !mediaReport)}
                 className="gap-2"
               >
-                {saving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                {saving ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Database className="h-4 w-4" />
+                )}
                 Save Data
               </Button>
               <Button
@@ -518,15 +591,27 @@ export function HttpRequestCard({
                 disabled={exporting || !insightReport || !isInsightEndpoint}
                 className="gap-2"
               >
-                {exporting ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                {exporting ? (
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4" />
+                )}
                 Export n8n JSON
               </Button>
             </div>
           </>
         )}
 
-        <Button onClick={runAnalysis} disabled={running} className="h-12 w-full gap-2 text-base font-medium">
-          {running ? <LoaderCircle className="h-5 w-5 animate-spin" /> : <Play className="h-5 w-5" />}
+        <Button
+          onClick={runAnalysis}
+          disabled={running}
+          className="h-12 w-full gap-2 text-base font-medium"
+        >
+          {running ? (
+            <LoaderCircle className="h-5 w-5 animate-spin" />
+          ) : (
+            <Play className="h-5 w-5" />
+          )}
           Run
         </Button>
 

@@ -1,27 +1,22 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Info } from "lucide-react";
-import { toast } from "react-toastify";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Info } from 'lucide-react';
+import { toast } from 'react-toastify';
 
-import { HttpRequestCard } from "@/components/app/console/cards/http-request/http-request-card";
-import { InstagramBuilderSection } from "@/components/app/console/integrations/instagram/instagram-builder-section";
-import { useInstagramIntegration } from "@/components/app/console/integrations/instagram/use-instagram-integration";
-import { OutputCard } from "@/components/app/console/output/output-card";
-import { ConsoleSidebar } from "@/components/app/console/sidebar/console-sidebar";
-import { TutorialDialog } from "@/components/app/console/tutorial/tutorial-dialog";
-import type {
-  HttpRequestReport,
-  SessionView,
-} from "@/components/app/console/types";
-import { Button } from "@/components/ui/button";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import {
-  DEFAULT_ACCOUNT_MEDIA_FIELDS,
-} from "@/lib/insights/media-fields";
-import { fetchWithAuth } from "@/lib/utils/use-auth-headers";
+import { HttpRequestCard } from '@/components/app/console/cards/http-request/http-request-card';
+import { InstagramBuilderSection } from '@/components/app/console/integrations/instagram/instagram-builder-section';
+import { useInstagramIntegration } from '@/components/app/console/integrations/instagram/use-instagram-integration';
+import { OutputCard } from '@/components/app/console/output/output-card';
+import { ConsoleSidebar } from '@/components/app/console/sidebar/console-sidebar';
+import { TutorialDialog } from '@/components/app/console/tutorial/tutorial-dialog';
+import type { HttpRequestReport, SessionView } from '@/components/app/console/types';
+import { Button } from '@/components/ui/button';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { DEFAULT_ACCOUNT_MEDIA_FIELDS } from '@/lib/insights/media-fields';
+import { fetchWithAuth } from '@/lib/utils/use-auth-headers';
 
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 interface ConsoleAppProps {
   session: SessionView;
@@ -44,18 +39,18 @@ function uniqueOrdered(items: string[]): string[] {
 }
 
 function sanitizeSingleUrlInput(raw: string): string {
-  const compact = raw.replace(/\r?\n/g, " ").trim();
+  const compact = raw.replace(/\r?\n/g, ' ').trim();
   const [firstToken] = compact.split(/\s+/);
-  return firstToken ?? "";
+  return firstToken ?? '';
 }
 
 function encodeBasicAuthValue(value: string): string {
-  if (typeof window === "undefined" || typeof window.btoa !== "function") {
-    return "";
+  if (typeof window === 'undefined' || typeof window.btoa !== 'function') {
+    return '';
   }
 
   const utf8 = encodeURIComponent(value).replace(/%([0-9A-F]{2})/g, (_, hex: string) =>
-    String.fromCharCode(Number.parseInt(hex, 16)),
+    String.fromCharCode(Number.parseInt(hex, 16))
   );
 
   return window.btoa(utf8);
@@ -69,27 +64,27 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       ? session.notionTargetPageIds
       : session.notionPages[0]
         ? [session.notionPages[0].id]
-        : [],
+        : []
   );
   const [notionTableByPage, setNotionTableByPage] = useState<Record<string, string>>({});
   const [saveToNotion, setSaveToNotion] = useState(false);
   const [autoSchedule, setAutoSchedule] = useState(session.autoSchedule);
   const [tutorialOpen, setTutorialOpen] = useState(false);
 
-  const [queryTab, setQueryTab] = useState<"parameters" | "headers" | "body" | "authorization">(
-    "parameters",
+  const [queryTab, setQueryTab] = useState<'parameters' | 'headers' | 'body' | 'authorization'>(
+    'parameters'
   );
-  const [requestMethod, setRequestMethod] = useState<HttpMethod>("GET");
-  const [bodyMode, setBodyMode] = useState<"json" | "form-data" | "x-www-form-urlencoded">("json");
-  const [authMode, setAuthMode] = useState<"oauth" | "token" | "basic">("oauth");
-  const [editableUrl, setEditableUrl] = useState("");
-  const [requestBody, setRequestBody] = useState("");
+  const [requestMethod, setRequestMethod] = useState<HttpMethod>('GET');
+  const [bodyMode, setBodyMode] = useState<'json' | 'form-data' | 'x-www-form-urlencoded'>('json');
+  const [authMode, setAuthMode] = useState<'oauth' | 'token' | 'basic'>('oauth');
+  const [editableUrl, setEditableUrl] = useState('');
+  const [requestBody, setRequestBody] = useState('');
   const [customHeaders, setCustomHeaders] = useState<Array<{ key: string; value: string }>>([]);
-  const [newHeaderKey, setNewHeaderKey] = useState("");
-  const [newHeaderValue, setNewHeaderValue] = useState("");
-  const [bearerToken, setBearerToken] = useState("");
-  const [basicUsername, setBasicUsername] = useState("");
-  const [basicPassword, setBasicPassword] = useState("");
+  const [newHeaderKey, setNewHeaderKey] = useState('');
+  const [newHeaderValue, setNewHeaderValue] = useState('');
+  const [bearerToken, setBearerToken] = useState('');
+  const [basicUsername, setBasicUsername] = useState('');
+  const [basicPassword, setBasicPassword] = useState('');
 
   const [loggingOut, setLoggingOut] = useState(false);
   const [running, setRunning] = useState(false);
@@ -116,7 +111,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       notionPages: availableNotionPages,
       notionDatabases: availableNotionDatabases,
     }),
-    [availableNotionDatabases, availableNotionPages, session],
+    [availableNotionDatabases, availableNotionPages, session]
   );
 
   const exportTargetIds = useMemo(
@@ -124,13 +119,13 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       uniqueOrdered(
         notionPageIds
           .map((pageId) => notionTableByPage[pageId]?.trim() || pageId)
-          .filter((targetId) => targetId.trim().length > 0),
+          .filter((targetId) => targetId.trim().length > 0)
       ),
-    [notionPageIds, notionTableByPage],
+    [notionPageIds, notionTableByPage]
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return;
     }
 
@@ -139,9 +134,9 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       return;
     }
 
-    const currentSessionId = sessionStorage.getItem("ana_session_id");
+    const currentSessionId = sessionStorage.getItem('ana_session_id');
     if (currentSessionId !== serverSessionId) {
-      sessionStorage.setItem("ana_session_id", serverSessionId);
+      sessionStorage.setItem('ana_session_id', serverSessionId);
     }
   }, [session.sessionId]);
 
@@ -174,14 +169,14 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
   }, [error]);
 
   useEffect(() => {
-    if (!instagram.hasOAuthConnection && authMode === "oauth") {
-      setAuthMode("token");
+    if (!instagram.hasOAuthConnection && authMode === 'oauth') {
+      setAuthMode('token');
     }
   }, [authMode, instagram.hasOAuthConnection]);
 
   useEffect(() => {
-    if (instagram.isInstagramOAuthLinked && requestMethod !== "GET") {
-      setRequestMethod("GET");
+    if (instagram.isInstagramOAuthLinked && requestMethod !== 'GET') {
+      setRequestMethod('GET');
     }
   }, [instagram.isInstagramOAuthLinked, requestMethod]);
 
@@ -206,7 +201,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     setNotionTableByPage((previous) => {
       const selected = new Set(notionPageIds);
       const nextEntries = Object.entries(previous).filter(
-        ([pageId, databaseId]) => selected.has(pageId) && databaseId.trim().length > 0,
+        ([pageId, databaseId]) => selected.has(pageId) && databaseId.trim().length > 0
       );
 
       if (nextEntries.length === Object.keys(previous).length) {
@@ -227,9 +222,9 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
   const handleLogout = () => {
     setLoggingOut(true);
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("ana_session_id");
-      window.location.href = "/";
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('ana_session_id');
+      window.location.href = '/';
     }
   };
 
@@ -261,7 +256,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       id: string;
       title: string;
       databases?: Array<{ id: string; title: string; parentPageId?: string | null }>;
-    }>,
+    }>
   ) => {
     setAvailableNotionPages(pages);
     setAvailableNotionDatabases(
@@ -271,7 +266,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
             id: database.id,
             title: database.title,
             parentPageId: database.parentPageId ?? page.id,
-          })),
+          }))
         )
         .reduce<Array<{ id: string; title: string; parentPageId: string }>>((acc, database) => {
           if (!database.id.trim()) {
@@ -284,9 +279,9 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
           acc.push(database);
           return acc;
-        }, []),
+        }, [])
     );
-    setStatus("Notion pages refreshed successfully");
+    setStatus('Notion pages refreshed successfully');
   };
 
   const handleDatabaseCreated = (database: { id: string; title: string; parentPageId: string }) => {
@@ -303,8 +298,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     setError(null);
 
     try {
-      const response = await fetchWithAuth("/api/schedule", {
-        method: "POST",
+      const response = await fetchWithAuth('/api/schedule', {
+        method: 'POST',
         body: JSON.stringify({
           autoSchedule,
           notionTargetPageIds: notionPageIds,
@@ -313,12 +308,12 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "Failed to update schedule settings.");
+        throw new Error(payload?.error?.message ?? 'Failed to update schedule settings.');
       }
 
-      setStatus("Auto schedule settings saved.");
+      setStatus('Auto schedule settings saved.');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Failed to update schedule settings.");
+      setError(reason instanceof Error ? reason.message : 'Failed to update schedule settings.');
     } finally {
       setScheduleSaving(false);
     }
@@ -327,7 +322,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
   const removeCustomHeader = (key: string) => {
     const normalizedKey = key.trim().toLowerCase();
     setCustomHeaders((previous) =>
-      previous.filter((item) => item.key.trim().toLowerCase() !== normalizedKey),
+      previous.filter((item) => item.key.trim().toLowerCase() !== normalizedKey)
     );
   };
 
@@ -340,15 +335,13 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     }
 
     setCustomHeaders((previous) => {
-      const next = previous.filter(
-        (item) => item.key.trim().toLowerCase() !== key.toLowerCase(),
-      );
+      const next = previous.filter((item) => item.key.trim().toLowerCase() !== key.toLowerCase());
       next.push({ key, value });
       return next;
     });
 
-    setNewHeaderKey("");
-    setNewHeaderValue("");
+    setNewHeaderKey('');
+    setNewHeaderValue('');
   };
 
   const buildHttpHeaders = (): Record<string, string> => {
@@ -364,14 +357,14 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       headerMap[key] = value;
     }
 
-    if (authMode === "token") {
-      const token = bearerToken.trim().replace(/^Bearer\s+/i, "");
+    if (authMode === 'token') {
+      const token = bearerToken.trim().replace(/^Bearer\s+/i, '');
       if (token) {
         headerMap.Authorization = `Bearer ${token}`;
       }
     }
 
-    if (authMode === "basic") {
+    if (authMode === 'basic') {
       const username = basicUsername.trim();
       const password = basicPassword;
 
@@ -383,16 +376,16 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       }
     }
 
-    if (requestMethod !== "GET" && requestBody.trim()) {
+    if (requestMethod !== 'GET' && requestBody.trim()) {
       const hasContentType = Object.keys(headerMap).some(
-        (key) => key.toLowerCase() === "content-type",
+        (key) => key.toLowerCase() === 'content-type'
       );
 
       if (!hasContentType) {
-        if (bodyMode === "x-www-form-urlencoded") {
-          headerMap["Content-Type"] = "application/x-www-form-urlencoded";
-        } else if (bodyMode === "json") {
-          headerMap["Content-Type"] = "application/json";
+        if (bodyMode === 'x-www-form-urlencoded') {
+          headerMap['Content-Type'] = 'application/x-www-form-urlencoded';
+        } else if (bodyMode === 'json') {
+          headerMap['Content-Type'] = 'application/json';
         }
       }
     }
@@ -420,8 +413,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     }
 
     const targetUrl = new URL(singleUrl);
-    if (targetUrl.protocol !== "http:" && targetUrl.protocol !== "https:") {
-      throw new Error("Only http:// and https:// URLs are supported.");
+    if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
+      throw new Error('Only http:// and https:// URLs are supported.');
     }
 
     const queryParameters = instagram.requestParameterRows
@@ -432,17 +425,17 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       .filter((row) => row.key.length > 0);
 
     if (queryParameters.length > 0) {
-      targetUrl.search = "";
+      targetUrl.search = '';
       for (const parameter of queryParameters) {
         targetUrl.searchParams.set(parameter.key, parameter.value);
       }
     }
 
     const outgoingHeaders = buildHttpHeaders();
-    const includeBody = requestMethod !== "GET";
+    const includeBody = requestMethod !== 'GET';
 
-    const response = await fetchWithAuth("/api/http/request", {
-      method: "POST",
+    const response = await fetchWithAuth('/api/http/request', {
+      method: 'POST',
       body: JSON.stringify({
         url: targetUrl.toString(),
         method: requestMethod,
@@ -455,16 +448,18 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     const payload = (await response.json()) as HttpRequestReport | { error?: { message?: string } };
     if (!response.ok) {
       throw new Error(
-        payload && "error" in payload
-          ? payload.error?.message ?? "HTTP request failed."
-          : "HTTP request failed.",
+        payload && 'error' in payload
+          ? (payload.error?.message ?? 'HTTP request failed.')
+          : 'HTTP request failed.'
       );
     }
 
     const nextReport = payload as HttpRequestReport;
     setHttpReport(nextReport);
     instagram.clearReports();
-    setStatus(`HTTP request completed (${nextReport.response.status} ${nextReport.response.statusText}).`);
+    setStatus(
+      `HTTP request completed (${nextReport.response.status} ${nextReport.response.statusText}).`
+    );
   };
 
   const runAnalysis = async () => {
@@ -481,7 +476,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
         await runHttpRequest();
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unknown error.");
+      setError(reason instanceof Error ? reason.message : 'Unknown error.');
     } finally {
       setRunning(false);
     }
@@ -489,7 +484,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
   const saveResult = async () => {
     if (!instagram.insightReport && !instagram.mediaReport) {
-      setError("No data to save. Please run analysis first.");
+      setError('No data to save. Please run analysis first.');
       return;
     }
 
@@ -503,7 +498,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
       if (saveToNotion) {
         for (const [pageId, tableValue] of Object.entries(notionTableByPage)) {
-          if (tableValue.startsWith("__create_default_")) {
+          if (tableValue.startsWith('__create_default_')) {
             const page = session.notionPages.find((item) => item.id === pageId);
             if (!page) {
               continue;
@@ -511,23 +506,24 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
             try {
               const defaultTableName = `${page.title} - Default`;
-              const createResponse = await fetchWithAuth("/api/notion/databases", {
-                method: "POST",
+              const createResponse = await fetchWithAuth('/api/notion/databases', {
+                method: 'POST',
                 body: JSON.stringify({
                   parentPageId: pageId,
                   databaseTitle: defaultTableName,
-                  defaultFields: outputFields.length > 0 ? outputFields : DEFAULT_ACCOUNT_MEDIA_FIELDS,
+                  defaultFields:
+                    outputFields.length > 0 ? outputFields : DEFAULT_ACCOUNT_MEDIA_FIELDS,
                 }),
               });
 
               if (!createResponse.ok) {
                 const errorData = await createResponse.json().catch(() => ({}));
                 const errorMessage =
-                  typeof errorData.error === "string"
+                  typeof errorData.error === 'string'
                     ? errorData.error
-                    : typeof errorData.error === "object"
+                    : typeof errorData.error === 'object'
                       ? JSON.stringify(errorData.error)
-                      : "Failed to create default table";
+                      : 'Failed to create default table';
                 throw new Error(errorMessage);
               }
 
@@ -554,8 +550,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
         }
       }
 
-      const response = await fetchWithAuth("/api/save", {
-        method: "POST",
+      const response = await fetchWithAuth('/api/save', {
+        method: 'POST',
         body: JSON.stringify({
           sourceAccount: instagram.buildSourceAccount(),
           report: instagram.insightReport ?? undefined,
@@ -568,25 +564,25 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
       const payload = await response.json();
       if (!response.ok) {
-        throw new Error(payload?.error?.message ?? "Failed to save data.");
+        throw new Error(payload?.error?.message ?? 'Failed to save data.');
       }
 
       const notionStatus =
-        typeof payload?.notionMessage === "string" ? payload.notionMessage.trim() : "";
+        typeof payload?.notionMessage === 'string' ? payload.notionMessage.trim() : '';
 
       if (saveToNotion) {
         if (notionStatus.length > 0) {
           setStatus(notionStatus);
         } else if (payload?.savedToNotion) {
-          setStatus("Data saved to Notion successfully.");
+          setStatus('Data saved to Notion successfully.');
         } else {
-          setStatus("Data saved locally. No data was written to Notion.");
+          setStatus('Data saved locally. No data was written to Notion.');
         }
       } else {
-        setStatus("Data saved successfully.");
+        setStatus('Data saved successfully.');
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unknown error.");
+      setError(reason instanceof Error ? reason.message : 'Unknown error.');
     } finally {
       setSaving(false);
     }
@@ -594,12 +590,12 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
   const exportN8n = async () => {
     if (!instagram.insightReport) {
-      setError("Export n8n only supports Account Insight data.");
+      setError('Export n8n only supports Account Insight data.');
       return;
     }
 
     if (exportTargetIds.length === 0) {
-      setError("Please select at least one Notion page before exporting n8n workflow.");
+      setError('Please select at least one Notion page before exporting n8n workflow.');
       return;
     }
 
@@ -607,8 +603,8 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     setError(null);
 
     try {
-      const response = await fetchWithAuth("/api/n8n/export", {
-        method: "POST",
+      const response = await fetchWithAuth('/api/n8n/export', {
+        method: 'POST',
         body: JSON.stringify({
           pageIds: exportTargetIds,
           graphUrl: instagram.insightReport.query.urlPreview,
@@ -624,20 +620,20 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
 
       if (!response.ok) {
         const payload = await response.json();
-        throw new Error(payload?.error?.message ?? "Failed to export n8n workflow.");
+        throw new Error(payload?.error?.message ?? 'Failed to export n8n workflow.');
       }
 
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
+      const anchor = document.createElement('a');
       anchor.href = objectUrl;
       anchor.download = `ana-social-workflow-${Date.now()}.json`;
       anchor.click();
       URL.revokeObjectURL(objectUrl);
 
-      setStatus("Exported n8n workflow JSON.");
+      setStatus('Exported n8n workflow JSON.');
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unknown error.");
+      setError(reason instanceof Error ? reason.message : 'Unknown error.');
     } finally {
       setExporting(false);
     }
@@ -652,7 +648,7 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
         onNewRequest={() => {
           instagram.clearReports();
           setHttpReport(null);
-          setStatus("Ready to create a new request.");
+          setStatus('Ready to create a new request.');
           setError(null);
         }}
         onOpenTutorial={() => setTutorialOpen(true)}
@@ -668,7 +664,13 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
               Shared shell for multi-platform builders and HTTP workflows
             </p>
           </div>
-          <Button type="button" variant="ghost" size="sm" className="ml-auto" onClick={() => setTutorialOpen(true)}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="ml-auto"
+            onClick={() => setTutorialOpen(true)}
+          >
             <Info className="h-4 w-4" />
             Tutorial
           </Button>

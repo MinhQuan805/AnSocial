@@ -8,14 +8,14 @@
 // ============================================================================
 
 export interface ProviderConnection {
-  id: string;  // UUID
+  id: string; // UUID
   userId: string;
-  providerType: string;  // 'facebook', 'notion', 'tiktok', etc.
+  providerType: string; // 'facebook', 'notion', 'tiktok', etc.
   providerUserId: string;
-  accessToken: string;  // Encrypted by TokenCryptoService
+  accessToken: string; // Encrypted by TokenCryptoService
   refreshToken?: string;
   expiresAt?: Date;
-  metadata?: Record<string, any>;  // Provider-specific data
+  metadata?: Record<string, any>; // Provider-specific data
   createdAt: Date;
   updatedAt: Date;
   connectedAt: Date;
@@ -42,8 +42,8 @@ export interface IProvider {
    * Initiate connection flow (returns state for CSRF protection)
    */
   issueState(args: {
-    response: import("next/server").NextResponse;
-    flowMode?: "redirect" | "popup";
+    response: import('next/server').NextResponse;
+    flowMode?: 'redirect' | 'popup';
   }): string;
 
   /**
@@ -55,7 +55,7 @@ export interface IProvider {
    * Complete OAuth flow and save connection
    */
   completeAuth(args: {
-    request: import("next/server").NextRequest;
+    request: import('next/server').NextRequest;
     code: string | null;
     state: string | null;
   }): Promise<{ userId: string; flowMode?: string }>;
@@ -78,7 +78,7 @@ export interface IProvider {
   /**
    * Clear any temporary state
    */
-  clearState(response: import("next/server").NextResponse): void;
+  clearState(response: import('next/server').NextResponse): void;
 }
 
 export interface ConnectionStatus {
@@ -94,8 +94,8 @@ export interface ConnectionStatus {
 
 export interface OAuthStatePayload {
   provider: string;
-  flowMode: "redirect" | "popup";
-  context?: Record<string, any>;  // Additional context per provider
+  flowMode: 'redirect' | 'popup';
+  context?: Record<string, any>; // Additional context per provider
   issuedAt: number;
   expiresAt: number;
 }
@@ -108,8 +108,8 @@ export interface AutoScheduleConfig {
   id: string;
   userId: string;
   enabled: boolean;
-  frequency: "daily" | "weekly" | "monthly";
-  time: string;  // HH:MM format
+  frequency: 'daily' | 'weekly' | 'monthly';
+  time: string; // HH:MM format
   timezone: string;
   createdAt: Date;
   updatedAt: Date;

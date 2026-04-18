@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { CircleAlert } from "lucide-react";
+import { useMemo } from 'react';
+import { CircleAlert } from 'lucide-react';
 
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -13,14 +13,14 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { HttpRequestReport, InsightReport, MediaReport } from "@/components/app/console/types";
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { HttpRequestReport, InsightReport, MediaReport } from '@/components/app/console/types';
 import {
   type JsonMappingField,
   extractJsonMappingFields,
   setMappingExpressionData,
-} from "@/lib/utils/json-mapping";
+} from '@/lib/utils/json-mapping';
 
 interface OutputCardProps {
   isHttpMode: boolean;
@@ -48,7 +48,9 @@ function RawPayloadWithMapping({ payloadText, mappingFields }: RawPayloadWithMap
     <div className="grid gap-3 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="max-h-[460px] overflow-auto rounded-md border border-zinc-200 bg-zinc-50 p-3">
         <p className="text-xs font-semibold text-zinc-700">Drag fields to map values</p>
-        <p className="mt-1 text-xs text-zinc-500">Drop into Parameters, Headers, Body, Token, or Basic auth inputs.</p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Drop into Parameters, Headers, Body, Token, or Basic auth inputs.
+        </p>
         <div className="mt-3 grid gap-2">
           {mappingFields.length === 0 ? (
             <p className="rounded-md border border-dashed border-zinc-300 bg-white px-2 py-2 text-xs text-zinc-500">
@@ -62,7 +64,7 @@ function RawPayloadWithMapping({ payloadText, mappingFields }: RawPayloadWithMap
                 draggable
                 onDragStart={(event) => {
                   setMappingExpressionData(event.dataTransfer, field.expression);
-                  event.dataTransfer.effectAllowed = "copy";
+                  event.dataTransfer.effectAllowed = 'copy';
                 }}
                 className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-left text-xs transition hover:border-zinc-400 hover:bg-zinc-100 active:cursor-grabbing"
                 title={field.expression}
@@ -98,16 +100,14 @@ export function OutputCard({
         new Set([
           ...insightReport.query.metrics,
           ...insightReport.accounts.flatMap((account) =>
-            account.metricResults.map((metricResult) => metricResult.metric),
+            account.metricResults.map((metricResult) => metricResult.metric)
           ),
-        ]),
+        ])
       )
     : [];
 
   const toMetricLabel = (metricKey: string) =>
-    metricKey
-      .replace(/[_-]+/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+    metricKey.replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
   const formatDateTime = (value: string) => {
     const parsed = new Date(value);
@@ -115,7 +115,7 @@ export function OutputCard({
   };
 
   const formatHttpPayload = (payload: unknown) => {
-    if (typeof payload === "string") {
+    if (typeof payload === 'string') {
       return payload;
     }
 
@@ -128,10 +128,13 @@ export function OutputCard({
 
   const httpMappingFields = useMemo(
     () => extractJsonMappingFields(httpReport?.response.data),
-    [httpReport?.response.data],
+    [httpReport?.response.data]
   );
 
-  const insightMappingFields = useMemo(() => extractJsonMappingFields(insightReport), [insightReport]);
+  const insightMappingFields = useMemo(
+    () => extractJsonMappingFields(insightReport),
+    [insightReport]
+  );
   const mediaMappingFields = useMemo(() => extractJsonMappingFields(mediaReport), [mediaReport]);
 
   return (
@@ -139,10 +142,10 @@ export function OutputCard({
       <CardHeader>
         <CardTitle className="text-xl">
           {isHttpMode
-            ? "HTTP Request Output"
+            ? 'HTTP Request Output'
             : isInsightEndpoint
-              ? "Account Insight Output"
-              : "Account Media Output"}
+              ? 'Account Insight Output'
+              : 'Account Media Output'}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -166,13 +169,17 @@ export function OutputCard({
                 </div>
                 <div>
                   <p className="text-xs text-zinc-500">Request URL</p>
-                  <p className="break-all font-mono text-xs text-zinc-900">{httpReport.request.url}</p>
+                  <p className="break-all font-mono text-xs text-zinc-900">
+                    {httpReport.request.url}
+                  </p>
                 </div>
                 {(httpReport.request.params?.length ?? 0) > 0 ? (
                   <div>
                     <p className="text-xs text-zinc-500">Query Parameters</p>
                     <p className="break-all font-mono text-xs text-zinc-900">
-                      {httpReport.request.params?.map((item) => `${item.key}=${item.value}`).join("&")}
+                      {httpReport.request.params
+                        ?.map((item) => `${item.key}=${item.value}`)
+                        .join('&')}
                     </p>
                   </div>
                 ) : null}
@@ -212,7 +219,7 @@ export function OutputCard({
                   <CircleAlert className="h-4 w-4" />
                   <AlertTitle>Invalid accounts</AlertTitle>
                   <AlertDescription>
-                    Invalid accounts: {insightReport.invalidAccounts.join(", ")}
+                    Invalid accounts: {insightReport.invalidAccounts.join(', ')}
                   </AlertDescription>
                 </Alert>
               ) : null}
@@ -231,7 +238,10 @@ export function OutputCard({
                 <TableBody>
                   {insightReport.accounts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={metricColumns.length + 4} className="text-center text-zinc-500">
+                      <TableCell
+                        colSpan={metricColumns.length + 4}
+                        className="text-center text-zinc-500"
+                      >
                         No insight rows available.
                       </TableCell>
                     </TableRow>
@@ -241,7 +251,7 @@ export function OutputCard({
                         account.metricResults.map((metricResult) => [
                           metricResult.metric,
                           Number.isFinite(metricResult.totalValue) ? metricResult.totalValue : 0,
-                        ]),
+                        ])
                       );
 
                       const latestEndTime = account.metricResults
@@ -253,18 +263,24 @@ export function OutputCard({
                       const period = account.metricResults[0]?.period ?? insightReport.query.period;
                       const totalValue = metricColumns.reduce(
                         (sum, metricKey) => sum + (metricValueMap.get(metricKey) ?? 0),
-                        0,
+                        0
                       );
 
                       return (
                         <TableRow key={account.accountId}>
                           <TableCell className="font-medium">@{account.accountHandle}</TableCell>
-                          <TableCell>{formatDateTime(latestEndTime ?? insightReport.generatedAt)}</TableCell>
+                          <TableCell>
+                            {formatDateTime(latestEndTime ?? insightReport.generatedAt)}
+                          </TableCell>
                           <TableCell>{period}</TableCell>
                           {metricColumns.map((metricKey) => {
                             const val = metricValueMap.get(metricKey) ?? 0;
                             return (
-                              <TableCell key={`${account.accountId}-${metricKey}`} className="max-w-[300px] truncate" title={String(val)}>
+                              <TableCell
+                                key={`${account.accountId}-${metricKey}`}
+                                className="max-w-[300px] truncate"
+                                title={String(val)}
+                              >
                                 {val}
                               </TableCell>
                             );
@@ -319,7 +335,7 @@ export function OutputCard({
                   <CircleAlert className="h-4 w-4" />
                   <AlertTitle>Invalid accounts</AlertTitle>
                   <AlertDescription>
-                    Invalid Accounts: {mediaReport.invalidAccounts.join(", ")}
+                    Invalid Accounts: {mediaReport.invalidAccounts.join(', ')}
                   </AlertDescription>
                 </Alert>
               ) : null}
@@ -336,7 +352,10 @@ export function OutputCard({
                 <TableBody>
                   {mediaRows.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={mediaTableFields.length + 1} className="text-center text-zinc-500">
+                      <TableCell
+                        colSpan={mediaTableFields.length + 1}
+                        className="text-center text-zinc-500"
+                      >
                         No media records.
                       </TableCell>
                     </TableRow>
@@ -347,7 +366,11 @@ export function OutputCard({
                         {mediaTableFields.map((field) => {
                           const val = formatMediaCellValue(row.item[field]);
                           return (
-                            <TableCell key={`${row.key}-${field}`} className="max-w-[300px] truncate" title={String(val)}>
+                            <TableCell
+                              key={`${row.key}-${field}`}
+                              className="max-w-[300px] truncate"
+                              title={String(val)}
+                            >
                               {val}
                             </TableCell>
                           );

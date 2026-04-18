@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { LoaderCircle } from "lucide-react";
+import { useState } from 'react';
+import { LoaderCircle } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "react-toastify";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'react-toastify';
 
 interface CreateNotionPageDialogProps {
   open: boolean;
@@ -27,13 +27,13 @@ export function CreateNotionPageDialog({
   onOpenChange,
   onPageCreated,
 }: CreateNotionPageDialogProps) {
-  const [pageName, setPageName] = useState("");
+  const [pageName, setPageName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCreatePage = async () => {
     if (!pageName.trim()) {
-      setError("Page name is required");
+      setError('Page name is required');
       return;
     }
 
@@ -41,9 +41,9 @@ export function CreateNotionPageDialog({
     setError(null);
 
     try {
-      const response = await fetch("/api/notion/pages/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/notion/pages/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pageTitle: pageName.trim(),
         }),
@@ -51,16 +51,16 @@ export function CreateNotionPageDialog({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to create page");
+        throw new Error(errorData.error || 'Failed to create page');
       }
 
       const page = await response.json();
       onPageCreated(page);
       toast.success(`Notion page \"${page.title}\" created successfully.`);
-      setPageName("");
+      setPageName('');
       onOpenChange(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create page";
+      const message = err instanceof Error ? err.message : 'Failed to create page';
       setError(message);
       toast.error(message);
     } finally {
@@ -69,7 +69,7 @@ export function CreateNotionPageDialog({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !isSubmitting) {
+    if (e.key === 'Enter' && !isSubmitting) {
       e.preventDefault();
       handleCreatePage();
     }
@@ -80,9 +80,7 @@ export function CreateNotionPageDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create New Notion Page</DialogTitle>
-          <DialogDescription>
-            Create a new page in your Notion workspace
-          </DialogDescription>
+          <DialogDescription>Create a new page in your Notion workspace</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
@@ -110,12 +108,21 @@ export function CreateNotionPageDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
-          <Button type="button" onClick={handleCreatePage} disabled={isSubmitting || !pageName.trim()}>
+          <Button
+            type="button"
+            onClick={handleCreatePage}
+            disabled={isSubmitting || !pageName.trim()}
+          >
             {isSubmitting && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? "Creating..." : "Create Page"}
+            {isSubmitting ? 'Creating...' : 'Create Page'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,6 @@
 ---
-name: "business-growth-skills"
-description: "4 business growth agent skills and plugins for Claude Code, Codex, Gemini CLI, Cursor, OpenClaw. Customer success (health scoring, churn), sales engineer (RFP), revenue operations (pipeline, GTM), contract & proposal writer. Python tools (stdlib-only)."
+name: 'business-growth-skills'
+description: '4 business growth agent skills and plugins for Claude Code, Codex, Gemini CLI, Cursor, OpenClaw. Customer success (health scoring, churn), sales engineer (RFP), revenue operations (pipeline, GTM), contract & proposal writer. Python tools (stdlib-only).'
 version: 1.1.0
 author: Alireza Rezvani
 license: MIT
@@ -23,23 +23,25 @@ agents:
 ## Quick Start
 
 ### Claude Code
+
 ```
 /read business-growth/customer-success-manager/SKILL.md
 ```
 
 ### Codex CLI
+
 ```bash
 npx agent-skills-cli add alirezarezvani/claude-skills/business-growth
 ```
 
 ## Skills Overview
 
-| Skill | Folder | Focus |
-|-------|--------|-------|
-| Customer Success Manager | `customer-success-manager/` | Health scoring, churn prediction, expansion |
-| Sales Engineer | `sales-engineer/` | RFP analysis, competitive matrices, PoC planning |
-| Revenue Operations | `revenue-operations/` | Pipeline analysis, forecast accuracy, GTM metrics |
-| Contract & Proposal Writer | `contract-and-proposal-writer/` | Proposal generation, contract templates |
+| Skill                      | Folder                          | Focus                                             |
+| -------------------------- | ------------------------------- | ------------------------------------------------- |
+| Customer Success Manager   | `customer-success-manager/`     | Health scoring, churn prediction, expansion       |
+| Sales Engineer             | `sales-engineer/`               | RFP analysis, competitive matrices, PoC planning  |
+| Revenue Operations         | `revenue-operations/`           | Pipeline analysis, forecast accuracy, GTM metrics |
+| Contract & Proposal Writer | `contract-and-proposal-writer/` | Proposal generation, contract templates           |
 
 ## Python Tools
 

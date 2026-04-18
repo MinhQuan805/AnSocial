@@ -10,7 +10,7 @@ import type {
   FacebookIntegration,
   AutoScheduleConfig,
   SaveInsightPayload,
-} from "@/lib/core/domain";
+} from '@/lib/core/domain';
 
 export interface IFacebookGraphRepository {
   exchangeCodeForShortToken(code: string, redirectUri: string): Promise<string>;
@@ -19,35 +19,32 @@ export interface IFacebookGraphRepository {
   getInstagramAccounts(accessToken: string): Promise<InstagramAccount[]>;
   getAccountInsights(
     query: GraphInsightsQuery,
-    accessToken: string,
+    accessToken: string
   ): Promise<AccountMetricResult[]>;
   getAccountMedia(args: {
     igAccountId: string;
     fields: string[];
     limit: number;
-    endpoint: "account_media" | "tagged_media";
+    endpoint: 'account_media' | 'tagged_media';
     accessToken: string;
   }): Promise<Array<Record<string, unknown>>>;
   getMediaPerformance(
     igAccountId: string,
     sinceUnix: number,
-    mediaFormat: GraphInsightsQuery["mediaFormat"],
-    accessToken: string,
-  ): Promise<AccountInsightsResult["mediaPerformance"]>;
-  getOnlineFollowers(
-    igAccountId: string,
-    accessToken: string,
-  ): Promise<Record<string, number>>;
+    mediaFormat: GraphInsightsQuery['mediaFormat'],
+    accessToken: string
+  ): Promise<AccountInsightsResult['mediaPerformance']>;
+  getOnlineFollowers(igAccountId: string, accessToken: string): Promise<Record<string, number>>;
   getAudienceDemographics(
     igAccountId: string,
-    accessToken: string,
-  ): Promise<AccountInsightsResult["demographics"]>;
+    accessToken: string
+  ): Promise<AccountInsightsResult['demographics']>;
 }
 
 export interface INotionRepository {
   exchangeCodeForToken(
     code: string,
-    redirectUri: string,
+    redirectUri: string
   ): Promise<{ accessToken: string; workspaceId: string; workspaceName: string }>;
   listAvailablePages(accessToken: string): Promise<NotionPageReference[]>;
   appendInsightReport(args: {
@@ -75,7 +72,7 @@ export interface INotionRepository {
   saveMediaDatabasePage(args: {
     accessToken: string;
     databaseId: string;
-    report: NonNullable<SaveInsightPayload["mediaReport"]>;
+    report: NonNullable<SaveInsightPayload['mediaReport']>;
   }): Promise<{ id: string; url: string }>;
   validateDatabaseProperties(args: {
     accessToken: string;
@@ -92,21 +89,21 @@ export interface ISupabaseRepository {
   getNotionIntegration(userId: string): Promise<NotionIntegration | null>;
   upsertNotionIntegration(
     userId: string,
-    patch: Partial<NotionIntegration>,
+    patch: Partial<NotionIntegration>
   ): Promise<NotionIntegration>;
 
   // Facebook integrations
   getFacebookIntegration(userId: string): Promise<FacebookIntegration | null>;
   upsertFacebookIntegration(
     userId: string,
-    patch: Partial<FacebookIntegration>,
+    patch: Partial<FacebookIntegration>
   ): Promise<FacebookIntegration>;
 
   // Auto schedule configs
   getAutoScheduleConfig(userId: string): Promise<AutoScheduleConfig | null>;
   upsertAutoScheduleConfig(
     userId: string,
-    patch: Partial<AutoScheduleConfig>,
+    patch: Partial<AutoScheduleConfig>
   ): Promise<AutoScheduleConfig>;
 
   // Insight snapshots
@@ -121,8 +118,5 @@ export interface ISupabaseRepository {
   getIntegration(userId: string): Promise<IntegrationRecord | null>;
 
   // @deprecated Use upsertNotionIntegration, upsertFacebookIntegration, upsertAutoScheduleConfig
-  upsertIntegration(
-    userId: string,
-    patch: Partial<IntegrationRecord>,
-  ): Promise<IntegrationRecord>;
+  upsertIntegration(userId: string, patch: Partial<IntegrationRecord>): Promise<IntegrationRecord>;
 }

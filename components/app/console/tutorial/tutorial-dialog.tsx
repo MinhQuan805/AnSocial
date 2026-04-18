@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import type { ExtendedRecordMap } from "notion-types";
-import { NotionRenderer } from "react-notion-x";
-import { toast } from "react-toastify";
+import { useEffect, useState } from 'react';
+import type { ExtendedRecordMap } from 'notion-types';
+import { NotionRenderer } from 'react-notion-x';
+import { toast } from 'react-toastify';
 
 import {
   Dialog,
@@ -11,17 +11,14 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import {
-  TUTORIAL_NOTION_URLS,
-  TUTORIAL_OPTIONS,
-  type TutorialSlug,
-} from "@/lib/config/notion-guides";
-import { fetchPublicNotionPage } from "@/lib/notion/load-public-page";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { PUBLIC_TUTORIALS, type PublicTutorial } from '@/lib/config/public-tutorials';
+import { fetchPublicNotionPage } from '@/lib/notion/load-public-page';
 
 const NOT_CONFIGURED_MESSAGE =
-  "This tutorial has not been configured with a public Notion page URL yet.";
+  'This tutorial has not been configured with a public Notion page URL yet.';
+const EMPTY_TUTORIAL_LIST_MESSAGE = 'No tutorials have been configured yet.';
 
 interface TutorialDialogProps {
   open: boolean;
@@ -29,17 +26,30 @@ interface TutorialDialogProps {
 }
 
 export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
-  const [activeTutorial, setActiveTutorial] = useState<TutorialSlug>("instagram");
+  const [activeTutorial, setActiveTutorial] = useState<string>(PUBLIC_TUTORIALS[0]?.slug ?? '');
   const [recordMap, setRecordMap] = useState<ExtendedRecordMap | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string>(NOT_CONFIGURED_MESSAGE);
+
+  const activeTutorialConfig = PUBLIC_TUTORIALS.find((item) => item.slug === activeTutorial);
+
+  function resolveNotionTarget(tutorial: PublicTutorial): string {
+    const configuredTarget = tutorial.notionTarget.trim();
+    return configuredTarget.length > 0 ? configuredTarget : tutorial.slug.trim();
+  }
 
   useEffect(() => {
     if (!open) {
       return;
     }
 
-    const notionTarget = TUTORIAL_NOTION_URLS[activeTutorial]?.trim() ?? "";
+    if (!activeTutorialConfig) {
+      setRecordMap(null);
+      setMessage(EMPTY_TUTORIAL_LIST_MESSAGE);
+      return;
+    }
+
+    const notionTarget = resolveNotionTarget(activeTutorialConfig);
     if (!notionTarget) {
       setRecordMap(null);
       setMessage(NOT_CONFIGURED_MESSAGE);
@@ -56,15 +66,15 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
 
         if (!cancelled) {
           setRecordMap(page.recordMap);
-          setMessage("");
+          setMessage('');
         }
       } catch {
         if (!cancelled) {
           setRecordMap(null);
           setMessage(
-            "Unable to load this tutorial from Notion. Make sure the page exists and is public.",
+            'Unable to load this tutorial from Notion. Make sure the page exists and is public.'
           );
-          toast.error("Unable to load tutorial from Notion.");
+          toast.error('Unable to load tutorial from Notion.');
         }
       } finally {
         if (!cancelled) {
@@ -79,7 +89,7 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
       cancelled = true;
       controller.abort();
     };
-  }, [activeTutorial, open]);
+  }, [activeTutorialConfig, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,15 +102,15 @@ export function TutorialDialog({ open, onOpenChange }: TutorialDialogProps) {
         </DialogHeader>
 
         <div className="flex flex-wrap gap-2">
-          {TUTORIAL_OPTIONS.map((item) => (
+          {PUBLIC_TUTORIALS.map((item) => (
             <Button
               key={item.slug}
               type="button"
               size="sm"
-              variant={item.slug === activeTutorial ? "default" : "outline"}
+              variant={item.slug === activeTutorial ? 'default' : 'outline'}
               onClick={() => setActiveTutorial(item.slug)}
             >
-              {item.label}
+              {item.title}
             </Button>
           ))}
         </div>

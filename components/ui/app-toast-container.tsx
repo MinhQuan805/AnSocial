@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { ToastContainer } from "react-toastify";
+import { ToastContainer } from 'react-toastify';
 
 export function AppToastContainer() {
   return (

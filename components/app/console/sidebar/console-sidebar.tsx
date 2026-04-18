@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { Command } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { useMemo } from 'react';
+import { Command } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 import {
   Sidebar,
@@ -13,14 +13,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "@/components/ui/sidebar";
+} from '@/components/ui/sidebar';
 import {
   buildConsoleSidebarNavGroups,
   buildConsoleSidebarUser,
-} from "@/components/app/console/sidebar/data/sidebar-data";
-import { ConsoleNavGroup } from "@/components/app/console/sidebar/nav-group";
-import { ConsoleNavUser } from "@/components/app/console/sidebar/nav-user";
-import type { ConsoleSidebarAction } from "@/components/app/console/sidebar/types";
+} from '@/components/app/console/sidebar/data/sidebar-data';
+import { ConsoleNavGroup } from '@/components/app/console/sidebar/nav-group';
+import { ConsoleNavUser } from '@/components/app/console/sidebar/nav-user';
+import type { ConsoleSidebarAction } from '@/components/app/console/sidebar/types';
 
 interface ConsoleSidebarProps {
   notionWorkspaceName: string | null;
@@ -42,13 +42,10 @@ export function ConsoleSidebar({
   const pathname = usePathname();
 
   const navGroups = useMemo(() => buildConsoleSidebarNavGroups(), []);
-  const user = useMemo(
-    () => buildConsoleSidebarUser(notionWorkspaceName),
-    [notionWorkspaceName],
-  );
+  const user = useMemo(() => buildConsoleSidebarUser(notionWorkspaceName), [notionWorkspaceName]);
 
   const handleAction = (action: ConsoleSidebarAction) => {
-    if (action === "new-request") {
+    if (action === 'new-request') {
       onNewRequest();
       return;
     }

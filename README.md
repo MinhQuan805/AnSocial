@@ -77,6 +77,28 @@ builds callback URLs from `APP_BASE_URL`.
 - `npm run typecheck`
 - `npm run build`
 
+## Public Notion Tutorials
+
+The app now supports rendering public Notion pages directly via route slug using
+`react-notion-x` (App Router):
+
+- `http://localhost:3000/1-Daily-Weekly-To-Do-Lists-15172ef69052804a9e8fd382316d2e1f`
+
+The route resolves page IDs from either:
+
+- The route slug itself (must contain a valid Notion page ID)
+- A configured mapping in `lib/config/public-tutorials.ts`
+
+To add tutorials, edit one file only:
+
+- `lib/config/public-tutorials.ts`
+
+Each entry has:
+
+- `slug`: URL path segment
+- `title`: display name
+- `notionTarget`: public Notion URL or page ID (leave empty to use `slug`)
+
 ## Security Notes
 
 - Tokens are handled server-side only

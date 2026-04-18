@@ -1,19 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ArrowLeft, Info } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useState } from 'react';
+import { ArrowLeft, Info } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-import type { SessionView } from "@/components/app/console/types";
-import { ConsoleSidebar } from "@/components/app/console/sidebar/console-sidebar";
-import { TutorialDialog } from "@/components/app/console/tutorial/tutorial-dialog";
-import { Button } from "@/components/ui/button";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { IntegrationCatalogPage } from "@/components/app/console/integrations/integration-catalog-page";
+import type { SessionView } from '@/components/app/console/types';
+import { ConsoleSidebar } from '@/components/app/console/sidebar/console-sidebar';
+import { TutorialDialog } from '@/components/app/console/tutorial/tutorial-dialog';
+import { Button } from '@/components/ui/button';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { IntegrationCatalogPage } from '@/components/app/console/integrations/integration-catalog-page';
 
 interface IntegrationsAppProps {
   session: SessionView;
@@ -25,14 +21,14 @@ export function IntegrationsApp({ session }: IntegrationsAppProps) {
   const [loggingOut, setLoggingOut] = useState(false);
 
   const goToDashboard = () => {
-    router.push("/console");
+    router.push('/console');
   };
 
   const handleLogout = () => {
     setLoggingOut(true);
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("ana_session_id");
-      window.location.href = "/";
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('ana_session_id');
+      window.location.href = '/';
     }
   };
 

@@ -66,11 +66,11 @@
         "available_tiers": ["professional", "enterprise", "enterprise_plus"]
       },
       "product_usage": {
-        "core_platform": {"adopted": true, "usage_pct": 85},
-        "analytics_module": {"adopted": true, "usage_pct": 60},
-        "integrations_module": {"adopted": false, "usage_pct": 0},
-        "api_access": {"adopted": true, "usage_pct": 40},
-        "advanced_reporting": {"adopted": false, "usage_pct": 0}
+        "core_platform": { "adopted": true, "usage_pct": 85 },
+        "analytics_module": { "adopted": true, "usage_pct": 60 },
+        "integrations_module": { "adopted": false, "usage_pct": 0 },
+        "api_access": { "adopted": true, "usage_pct": 40 },
+        "advanced_reporting": { "adopted": false, "usage_pct": 0 }
       },
       "departments": {
         "current": ["engineering", "product"],
@@ -143,11 +143,11 @@
         "available_tiers": ["starter", "professional", "enterprise"]
       },
       "product_usage": {
-        "core_platform": {"adopted": true, "usage_pct": 35},
-        "analytics_module": {"adopted": false, "usage_pct": 0},
-        "integrations_module": {"adopted": false, "usage_pct": 0},
-        "api_access": {"adopted": false, "usage_pct": 0},
-        "advanced_reporting": {"adopted": false, "usage_pct": 0}
+        "core_platform": { "adopted": true, "usage_pct": 35 },
+        "analytics_module": { "adopted": false, "usage_pct": 0 },
+        "integrations_module": { "adopted": false, "usage_pct": 0 },
+        "api_access": { "adopted": false, "usage_pct": 0 },
+        "advanced_reporting": { "adopted": false, "usage_pct": 0 }
       },
       "departments": {
         "current": ["engineering"],
@@ -173,7 +173,7 @@
       },
       "support": {
         "open_tickets": 3,
-        "escalation_rate": 0.10,
+        "escalation_rate": 0.1,
         "avg_resolution_hours": 30
       },
       "relationship": {
@@ -220,11 +220,11 @@
         "available_tiers": ["professional", "enterprise", "enterprise_plus"]
       },
       "product_usage": {
-        "core_platform": {"adopted": true, "usage_pct": 78},
-        "analytics_module": {"adopted": true, "usage_pct": 45},
-        "integrations_module": {"adopted": true, "usage_pct": 55},
-        "api_access": {"adopted": false, "usage_pct": 0},
-        "advanced_reporting": {"adopted": false, "usage_pct": 0}
+        "core_platform": { "adopted": true, "usage_pct": 78 },
+        "analytics_module": { "adopted": true, "usage_pct": 45 },
+        "integrations_module": { "adopted": true, "usage_pct": 55 },
+        "api_access": { "adopted": false, "usage_pct": 0 },
+        "advanced_reporting": { "adopted": false, "usage_pct": 0 }
       },
       "departments": {
         "current": ["operations", "finance"],
@@ -297,13 +297,13 @@
         "available_tiers": ["professional", "enterprise", "enterprise_plus"]
       },
       "product_usage": {
-        "core_platform": {"adopted": true, "usage_pct": 92},
-        "analytics_module": {"adopted": true, "usage_pct": 80},
-        "integrations_module": {"adopted": true, "usage_pct": 70},
-        "api_access": {"adopted": true, "usage_pct": 65},
-        "advanced_reporting": {"adopted": true, "usage_pct": 50},
-        "security_module": {"adopted": false, "usage_pct": 0},
-        "audit_module": {"adopted": false, "usage_pct": 0}
+        "core_platform": { "adopted": true, "usage_pct": 92 },
+        "analytics_module": { "adopted": true, "usage_pct": 80 },
+        "integrations_module": { "adopted": true, "usage_pct": 70 },
+        "api_access": { "adopted": true, "usage_pct": 65 },
+        "advanced_reporting": { "adopted": true, "usage_pct": 50 },
+        "security_module": { "adopted": false, "usage_pct": 0 },
+        "audit_module": { "adopted": false, "usage_pct": 0 }
       },
       "departments": {
         "current": ["clinical", "operations", "IT", "compliance"],

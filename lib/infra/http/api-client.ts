@@ -1,8 +1,8 @@
-import { ExternalApiError } from "@/lib/core/errors";
+import { ExternalApiError } from '@/lib/core/errors';
 
 export interface ApiClientRequest {
   url: string;
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   headers?: Record<string, string>;
   body?: string;
   timeoutMs?: number;
@@ -11,7 +11,7 @@ export interface ApiClientRequest {
 
 export class ApiClient {
   public async requestJson<T>(request: ApiClientRequest): Promise<T> {
-    const method = request.method ?? "GET";
+    const method = request.method ?? 'GET';
     const timeoutMs = request.timeoutMs ?? 15_000;
     const retryCount = request.retryCount ?? 2;
 
@@ -34,14 +34,14 @@ export class ApiClient {
           const text = await response.text();
 
           if ((response.status === 429 || response.status >= 500) && attempt < retryCount) {
-            await this.backoff(attempt, response.headers.get("Retry-After"));
+            await this.backoff(attempt, response.headers.get('Retry-After'));
             attempt += 1;
             continue;
           }
 
           throw new ExternalApiError(
             `External API error ${response.status}: ${text.slice(0, 300)}`,
-            response.status,
+            response.status
           );
         }
 
@@ -60,15 +60,15 @@ export class ApiClient {
       attempt += 1;
     }
 
-    if (lastError instanceof Error && lastError.name === "AbortError") {
-      throw new ExternalApiError("External API timeout exceeded", 504);
+    if (lastError instanceof Error && lastError.name === 'AbortError') {
+      throw new ExternalApiError('External API timeout exceeded', 504);
     }
 
     if (lastError instanceof ExternalApiError) {
       throw lastError;
     }
 
-    throw new ExternalApiError("Unable to reach external API");
+    throw new ExternalApiError('Unable to reach external API');
   }
 
   private async backoff(attempt: number, retryAfterHeader: string | null): Promise<void> {

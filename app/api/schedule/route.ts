@@ -1,10 +1,10 @@
-import { z } from "zod";
-import { NextRequest } from "next/server";
+import { z } from 'zod';
+import { NextRequest } from 'next/server';
 
-import { withAuth } from "@/lib/services/auth-middleware";
-import { getServices } from "@/lib/services/factory";
-import { fail, ok } from "@/lib/utils/response";
-import { autoScheduleSchema } from "@/lib/validators/input";
+import { withAuth } from '@/lib/services/auth-middleware';
+import { getServices } from '@/lib/services/factory';
+import { fail, ok } from '@/lib/utils/response';
+import { autoScheduleSchema } from '@/lib/validators/input';
 
 const scheduleUpdateSchema = z.object({
   autoSchedule: autoScheduleSchema,

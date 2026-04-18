@@ -8,26 +8,26 @@ import type {
   MarketingInsightReport,
   MediaFormatFilter,
   TimeSeriesPoint,
-} from "@/lib/core/domain";
-import { AppError, AuthError, ExternalApiError, ValidationError } from "@/lib/core/errors";
-import { DEFAULT_ACCOUNT_MEDIA_FIELDS, DEFAULT_TAGGED_MEDIA_FIELDS } from "@/lib/insights/media-fields";
-import type {
-  IFacebookGraphRepository,
-  ISupabaseRepository,
-} from "@/lib/repositories/interfaces";
+} from '@/lib/core/domain';
+import { AppError, AuthError, ExternalApiError, ValidationError } from '@/lib/core/errors';
+import {
+  DEFAULT_ACCOUNT_MEDIA_FIELDS,
+  DEFAULT_TAGGED_MEDIA_FIELDS,
+} from '@/lib/insights/media-fields';
+import type { IFacebookGraphRepository, ISupabaseRepository } from '@/lib/repositories/interfaces';
 import {
   buildGraphMediaUrlPreview,
   buildGraphInsightsUrlPreview,
   normalizeAccountInput,
   toGraphQuery,
   unixRangeFromDays,
-} from "@/lib/utils/query";
-import { freeTextAccountSchema } from "@/lib/validators/input";
+} from '@/lib/utils/query';
+import { freeTextAccountSchema } from '@/lib/validators/input';
 
 export class MarketingInsightsService {
   constructor(
     private readonly facebookRepo: IFacebookGraphRepository,
-    private readonly supabaseRepo: ISupabaseRepository,
+    private readonly supabaseRepo: ISupabaseRepository
   ) {}
 
   public async generateReport(args: {
@@ -50,7 +50,7 @@ export class MarketingInsightsService {
     });
 
     const normalizedForReport = toGraphQuery({
-      igAccountId: "<ig_account_id>",
+      igAccountId: '<ig_account_id>',
       metrics: args.metrics,
       period: args.period,
       rangeDays: args.rangeDays,
@@ -79,10 +79,10 @@ export class MarketingInsightsService {
           });
 
           const metricResults = await this.facebookRepo.getAccountInsights(query, token);
-          const reach = this.metricToSeries(metricResults, "reach");
-          const impressions = this.metricToSeries(metricResults, "impressions");
-          const profileViews = this.metricToSeries(metricResults, "profile_views");
-          const accountsEngaged = this.metricToSeries(metricResults, "accounts_engaged");
+          const reach = this.metricToSeries(metricResults, 'reach');
+          const impressions = this.metricToSeries(metricResults, 'impressions');
+          const profileViews = this.metricToSeries(metricResults, 'profile_views');
+          const accountsEngaged = this.metricToSeries(metricResults, 'accounts_engaged');
           const demographics = this.extractDemographics(metricResults);
 
           const fallbackRange = unixRangeFromDays(args.rangeDays);
@@ -90,7 +90,7 @@ export class MarketingInsightsService {
             accountId,
             query.sinceUnix ?? fallbackRange.sinceUnix,
             args.mediaFormat,
-            token,
+            token
           );
           const onlineFollowers = await this.facebookRepo
             .getOnlineFollowers(accountId, token)
@@ -119,30 +119,31 @@ export class MarketingInsightsService {
               onlineFollowers,
             }),
           } satisfies AccountInsightsResult;
-        }),
+        })
       );
     } catch (error) {
       if (
         error instanceof ExternalApiError &&
         /OAuthException|Error validating access token|Invalid OAuth/i.test(error.message)
       ) {
-        throw new AuthError("Facebook token is no longer valid. Please connect again.");
+        throw new AuthError('Facebook token is no longer valid. Please connect again.');
       }
 
       throw error;
     }
 
-    const primary = accountReports[0]?.accountId ?? "<ig_account_id>";
+    const primary = accountReports[0]?.accountId ?? '<ig_account_id>';
 
     return {
       query: {
         requestedMetrics: normalizedForReport.requestedMetrics,
         period: normalizedForReport.period,
-        rangeDays: normalizedForReport.period === "lifetime"
-          ? normalizedForReport.timeframe === "this_week"
-            ? 7
-            : 30
-          : args.rangeDays,
+        rangeDays:
+          normalizedForReport.period === 'lifetime'
+            ? normalizedForReport.timeframe === 'this_week'
+              ? 7
+              : 30
+            : args.rangeDays,
         metrics: normalizedForReport.effectiveMetrics,
         metricType: normalizedForReport.metricType,
         timeframe: normalizedForReport.timeframe,
@@ -170,10 +171,10 @@ export class MarketingInsightsService {
     selectedAccountIds: string[];
     fields: string[];
     limit: number;
-    endpoint: "account_media" | "tagged_media";
+    endpoint: 'account_media' | 'tagged_media';
   }): Promise<{
     query: {
-      endpoint: "account_media" | "tagged_media";
+      endpoint: 'account_media' | 'tagged_media';
       fields: string[];
       limit: number;
       urlPreview: string;
@@ -193,13 +194,14 @@ export class MarketingInsightsService {
     });
 
     const fields = Array.from(
-      new Set(args.fields.map((item) => item.trim()).filter((item) => item.length > 0)),
+      new Set(args.fields.map((item) => item.trim()).filter((item) => item.length > 0))
     );
-    const selectedFields = fields.length > 0 
-      ? fields 
-      : args.endpoint === "tagged_media" 
-        ? DEFAULT_TAGGED_MEDIA_FIELDS 
-        : DEFAULT_ACCOUNT_MEDIA_FIELDS;
+    const selectedFields =
+      fields.length > 0
+        ? fields
+        : args.endpoint === 'tagged_media'
+          ? DEFAULT_TAGGED_MEDIA_FIELDS
+          : DEFAULT_ACCOUNT_MEDIA_FIELDS;
 
     let accounts: Array<{
       accountId: string;
@@ -223,20 +225,20 @@ export class MarketingInsightsService {
             accountHandle: accountMapById.get(accountId)?.username ?? accountId,
             items,
           };
-        }),
+        })
       );
     } catch (error) {
       if (
         error instanceof ExternalApiError &&
         /OAuthException|Error validating access token|Invalid OAuth/i.test(error.message)
       ) {
-        throw new AuthError("Facebook token is no longer valid. Please connect again.");
+        throw new AuthError('Facebook token is no longer valid. Please connect again.');
       }
 
       throw error;
     }
 
-    const primary = accounts[0]?.accountId ?? "<ig_account_id>";
+    const primary = accounts[0]?.accountId ?? '<ig_account_id>';
 
     return {
       query: {
@@ -270,20 +272,20 @@ export class MarketingInsightsService {
 
     if (!facebookIntegration?.accessToken) {
       throw new AppError(
-        "FACEBOOK_NOT_CONNECTED",
-        "Instagram/Facebook OAuth is required before fetching insights.",
-        401,
+        'FACEBOOK_NOT_CONNECTED',
+        'Instagram/Facebook OAuth is required before fetching insights.',
+        401
       );
     }
 
-    console.log("[Check] ✅ ACCESS TOKEN EXISTS - Length:", facebookIntegration.accessToken.length);
-    console.log("[Check] Token expiry:", facebookIntegration.tokenExpiresAt);
+    console.log('[Check] ✅ ACCESS TOKEN EXISTS - Length:', facebookIntegration.accessToken.length);
+    console.log('[Check] Token expiry:', facebookIntegration.tokenExpiresAt);
 
     if (
       facebookIntegration.tokenExpiresAt &&
       new Date(facebookIntegration.tokenExpiresAt).getTime() <= Date.now()
     ) {
-      throw new AuthError("Facebook token expired. Please reconnect from Authorization tab.");
+      throw new AuthError('Facebook token expired. Please reconnect from Authorization tab.');
     }
 
     const token = facebookIntegration.accessToken;
@@ -296,13 +298,15 @@ export class MarketingInsightsService {
         error instanceof ExternalApiError &&
         /OAuthException|Error validating access token|Invalid OAuth/i.test(error.message)
       ) {
-        throw new AuthError("Facebook token is no longer valid. Please connect again.");
+        throw new AuthError('Facebook token is no longer valid. Please connect again.');
       }
 
       throw error;
     }
     const accountMapById = new Map(accounts.map((account) => [account.id, account]));
-    const accountMapByUsername = new Map(accounts.map((account) => [account.username.toLowerCase(), account]));
+    const accountMapByUsername = new Map(
+      accounts.map((account) => [account.username.toLowerCase(), account])
+    );
     const cleaned = args.accountInputs.map((item) => item.trim()).filter((item) => item.length > 0);
     const invalidAccounts: string[] = [];
     const resolvedIds = new Set<string>();
@@ -341,7 +345,7 @@ export class MarketingInsightsService {
 
     if (resolvedIds.size === 0) {
       throw new ValidationError(
-        "No valid Instagram account found. Connect Facebook and select at least one available account.",
+        'No valid Instagram account found. Connect Facebook and select at least one available account.'
       );
     }
 
@@ -354,8 +358,8 @@ export class MarketingInsightsService {
   }
 
   private metricToSeries(
-    metricResults: AccountInsightsResult["metricResults"],
-    metric: string,
+    metricResults: AccountInsightsResult['metricResults'],
+    metric: string
   ): TimeSeriesPoint[] {
     const matched = metricResults.find((item) => item.metric === metric);
     if (!matched) {
@@ -375,21 +379,21 @@ export class MarketingInsightsService {
   }
 
   private extractDemographics(
-    metricResults: AccountInsightsResult["metricResults"],
-  ): AccountInsightsResult["demographics"] {
+    metricResults: AccountInsightsResult['metricResults']
+  ): AccountInsightsResult['demographics'] {
     const rows = metricResults.flatMap((metric) => metric.breakdowns);
 
     return {
-      ageGender: this.toBuckets(rows, ["age", "gender"]),
-      countries: this.toBuckets(rows, ["country"]),
-      cities: this.toBuckets(rows, ["city"]),
+      ageGender: this.toBuckets(rows, ['age', 'gender']),
+      countries: this.toBuckets(rows, ['country']),
+      cities: this.toBuckets(rows, ['city']),
     };
   }
 
   private toBuckets(
-    rows: AccountInsightsResult["metricResults"][number]["breakdowns"],
-    dimensionKeys: string[],
-  ): AccountInsightsResult["demographics"]["ageGender"] {
+    rows: AccountInsightsResult['metricResults'][number]['breakdowns'],
+    dimensionKeys: string[]
+  ): AccountInsightsResult['demographics']['ageGender'] {
     const aggregate = new Map<string, number>();
 
     for (const row of rows) {
@@ -399,7 +403,7 @@ export class MarketingInsightsService {
           continue;
         }
 
-        const label = row.dimensionValues[index] ?? "unknown";
+        const label = row.dimensionValues[index] ?? 'unknown';
         aggregate.set(label, (aggregate.get(label) ?? 0) + row.value);
       }
     }
@@ -412,36 +416,39 @@ export class MarketingInsightsService {
 
   private generateRecommendations(args: {
     engagementRate: number;
-    media: AccountInsightsResult["mediaPerformance"];
+    media: AccountInsightsResult['mediaPerformance'];
     onlineFollowers: Record<string, number>;
-  }): AccountInsightsResult["recommendations"] {
-    const output: AccountInsightsResult["recommendations"] = [];
+  }): AccountInsightsResult['recommendations'] {
+    const output: AccountInsightsResult['recommendations'] = [];
 
     if (args.engagementRate < 0.03) {
       output.push({
-        title: "Increase engagement rate",
+        title: 'Increase engagement rate',
         summary:
-          "Engagement is below expectations. Prioritize content that addresses specific problems and features clearer CTAs.",
-        confidence: "high",
+          'Engagement is below expectations. Prioritize content that addresses specific problems and features clearer CTAs.',
+        confidence: 'high',
       });
     } else {
       output.push({
-        title: "Maintain effective content pacing",
+        title: 'Maintain effective content pacing',
         summary:
-          "Engagement rate is stable. Keep the current content structure and A/B test headlines to increase Reach.",
-        confidence: "medium",
+          'Engagement rate is stable. Keep the current content structure and A/B test headlines to increase Reach.',
+        confidence: 'medium',
       });
     }
 
     if (args.media.length > 0) {
-      const byType = args.media.reduce<Record<string, { count: number; score: number }>>((acc, item) => {
-        const prev = acc[item.mediaType] ?? { count: 0, score: 0 };
-        acc[item.mediaType] = {
-          count: prev.count + 1,
-          score: prev.score + item.engagementScore,
-        };
-        return acc;
-      }, {});
+      const byType = args.media.reduce<Record<string, { count: number; score: number }>>(
+        (acc, item) => {
+          const prev = acc[item.mediaType] ?? { count: 0, score: 0 };
+          acc[item.mediaType] = {
+            count: prev.count + 1,
+            score: prev.score + item.engagementScore,
+          };
+          return acc;
+        },
+        {}
+      );
 
       const best = Object.entries(byType)
         .map(([key, value]) => ({ key, avg: value.score / value.count }))
@@ -449,9 +456,9 @@ export class MarketingInsightsService {
 
       if (best) {
         output.push({
-          title: "Preferred content format",
+          title: 'Preferred content format',
           summary: `Currently, the ${best.key} format yields the highest average engagement score.`,
-          confidence: "medium",
+          confidence: 'medium',
         });
       }
     }
@@ -459,9 +466,9 @@ export class MarketingInsightsService {
     const bestHour = Object.entries(args.onlineFollowers).sort((a, b) => b[1] - a[1])[0];
     if (bestHour) {
       output.push({
-        title: "Recommended golden hour",
+        title: 'Recommended golden hour',
         summary: `The time slot with the most followers online is around ${bestHour[0]}:00, prioritize scheduling posts during this period.`,
-        confidence: "high",
+        confidence: 'high',
       });
     }
 

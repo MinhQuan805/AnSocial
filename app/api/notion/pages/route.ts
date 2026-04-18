@@ -1,8 +1,8 @@
-import type { NextRequest } from "next/server";
+import type { NextRequest } from 'next/server';
 
-import { withAuth } from "@/lib/services/auth-middleware";
-import { getServices } from "@/lib/services/factory";
-import { fail, ok } from "@/lib/utils/response";
+import { withAuth } from '@/lib/services/auth-middleware';
+import { getServices } from '@/lib/services/factory';
+import { fail, ok } from '@/lib/utils/response';
 
 /**
  * GET /api/notion/pages

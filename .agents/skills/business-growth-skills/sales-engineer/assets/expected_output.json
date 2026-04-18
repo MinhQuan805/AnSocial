@@ -86,9 +86,7 @@
     "overall_coverage_percentage": 84.5,
     "must_have_gaps": 0,
     "strategic_value": "high",
-    "reasons": [
-      "Coverage score 84.5% exceeds 70% threshold"
-    ]
+    "reasons": ["Coverage score 84.5% exceeds 70% threshold"]
   },
   "gap_analysis": [
     {

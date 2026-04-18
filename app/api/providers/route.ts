@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServices } from "@/lib/services/factory";
-import { withAuth } from "@/lib/services/auth-middleware";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServices } from '@/lib/services/factory';
+import { withAuth } from '@/lib/services/auth-middleware';
 
 /**
  * GET /api/providers
  * List all available providers and their connection status for current user
- * 
+ *
  * Returns:
  * {
  *   available: ['facebook', 'notion', 'tiktok'],
@@ -15,10 +15,7 @@ import { withAuth } from "@/lib/services/auth-middleware";
  *   }
  * }
  */
-async function handleGet(
-  request: NextRequest,
-  userId: string,
-): Promise<NextResponse> {
+async function handleGet(request: NextRequest, userId: string): Promise<NextResponse> {
   try {
     const services = getServices();
     // Get all available providers
@@ -43,8 +40,8 @@ async function handleGet(
     });
   } catch (error) {
     return NextResponse.json(
-      { error: "Failed to fetch provider status", details: String(error) },
-      { status: 500 },
+      { error: 'Failed to fetch provider status', details: String(error) },
+      { status: 500 }
     );
   }
 }
@@ -53,20 +50,14 @@ async function handleGet(
  * DELETE /api/providers/:type
  * Disconnect a provider from user account
  */
-async function handleDelete(
-  request: NextRequest,
-  userId: string,
-): Promise<NextResponse> {
+async function handleDelete(request: NextRequest, userId: string): Promise<NextResponse> {
   try {
     // Extract provider type from URL
-    const pathSegments = request.nextUrl.pathname.split("/").filter(Boolean);
+    const pathSegments = request.nextUrl.pathname.split('/').filter(Boolean);
     const providerType = pathSegments[2];
 
     if (!providerType) {
-      return NextResponse.json(
-        { error: "Provider type missing" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Provider type missing' }, { status: 400 });
     }
 
     // Get provider and disconnect
@@ -80,10 +71,10 @@ async function handleDelete(
   } catch (error) {
     return NextResponse.json(
       {
-        error: "Failed to disconnect provider",
+        error: 'Failed to disconnect provider',
         details: String(error),
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

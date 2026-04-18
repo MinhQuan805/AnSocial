@@ -1,15 +1,12 @@
-import type {
-  SaveInsightPayload,
-  SaveInsightResult,
-} from "@/lib/core/domain";
-import { AppError } from "@/lib/core/errors";
-import type { INotionRepository, ISupabaseRepository } from "@/lib/repositories/interfaces";
+import type { SaveInsightPayload, SaveInsightResult } from '@/lib/core/domain';
+import { AppError } from '@/lib/core/errors';
+import type { INotionRepository, ISupabaseRepository } from '@/lib/repositories/interfaces';
 
 export class SaveInsightsService {
   constructor(
     private readonly supabaseRepo: ISupabaseRepository,
     private readonly notionRepo: INotionRepository,
-    private readonly freeLimit: number,
+    private readonly freeLimit: number
   ) {}
 
   public async save(args: {
@@ -18,9 +15,9 @@ export class SaveInsightsService {
   }): Promise<SaveInsightResult> {
     if (!args.payload.report && !args.payload.mediaReport) {
       throw new AppError(
-        "REPORT_REQUIRED",
-        "No report payload was provided. Run analysis again before saving.",
-        400,
+        'REPORT_REQUIRED',
+        'No report payload was provided. Run analysis again before saving.',
+        400
       );
     }
 
@@ -58,14 +55,14 @@ export class SaveInsightsService {
         selectedPageIds.length > 0 ? selectedPageIds : fallbackIds.length > 0 ? fallbackIds : [];
 
       if (!notionIntegration?.accessToken) {
-        throw new AppError("NOTION_NOT_CONNECTED", "Notion OAuth token is missing.", 401);
+        throw new AppError('NOTION_NOT_CONNECTED', 'Notion OAuth token is missing.', 401);
       }
 
       if (resolvedPageIds.length === 0) {
         throw new AppError(
-          "NOTION_PAGE_REQUIRED",
-          "Please provide a Notion page ID before exporting report.",
-          400,
+          'NOTION_PAGE_REQUIRED',
+          'Please provide a Notion page ID before exporting report.',
+          400
         );
       }
 
@@ -117,7 +114,7 @@ export class SaveInsightsService {
                 resultId: result.id,
               };
             }
-            
+
             return {
               message: `No export data found for selected request`,
               wroteToNotion: false,
@@ -142,7 +139,7 @@ export class SaveInsightsService {
             if (args.payload.mediaReport) {
               return {
                 message:
-                  "Media/profile/tag exports require selecting a Notion database table for each page.",
+                  'Media/profile/tag exports require selecting a Notion database table for each page.',
                 wroteToNotion: false,
                 pageId,
               };
@@ -154,19 +151,19 @@ export class SaveInsightsService {
               pageId,
             };
           }
-        }),
+        })
       );
 
       const writtenToNotionCount = notionResults.filter((item) => item.wroteToNotion).length;
       savedToNotion = writtenToNotionCount > 0;
-      notionMessage = notionResults.map((item) => item.message).join(" | ");
+      notionMessage = notionResults.map((item) => item.message).join(' | ');
 
       if (!savedToNotion) {
         throw new AppError(
-          "NOTION_SAVE_NOOP",
+          'NOTION_SAVE_NOOP',
           notionMessage ||
-            "No data was written to Notion. Please select a valid Notion table and try again.",
-          400,
+            'No data was written to Notion. Please select a valid Notion table and try again.',
+          400
         );
       }
 

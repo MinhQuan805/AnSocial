@@ -1,51 +1,42 @@
-"use client";
+'use client';
 
-import { format } from "date-fns";
-import {
-  Calendar as CalendarIcon,
-  CircleAlert,
-  ExternalLink,
-  LoaderCircle,
-} from "lucide-react";
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon, CircleAlert, ExternalLink, LoaderCircle } from 'lucide-react';
 
 import {
   BREAKDOWN_LABELS,
   DEFAULT_INSIGHT_METRICS,
   METRIC_OPTIONS,
   TIMEFRAME_OPTIONS,
-} from "@/components/app/console/constants";
+} from '@/components/app/console/constants';
 import {
   MultiSelectDropdownField,
   type SelectOption,
-} from "@/components/app/console/forms/multi-select-dropdown-field";
+} from '@/components/app/console/forms/multi-select-dropdown-field';
 import {
   SingleSelectDropdownField,
   type SingleSelectDropdownOption,
-} from "@/components/app/console/forms/single-select-dropdown-field";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+} from '@/components/app/console/forms/single-select-dropdown-field';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import type {
   InsightBreakdown,
   InsightPeriod,
   InsightTimeframe,
   InsightRangeDays,
-} from "@/lib/core/domain";
+} from '@/lib/core/domain';
 import {
   ACCOUNT_MEDIA_FIELD_OPTIONS,
   DEFAULT_ACCOUNT_MEDIA_FIELDS,
-} from "@/lib/insights/media-fields";
-import type {
-  EndpointDefinition,
-  EndpointId,
-  IdType,
-} from "@/lib/insights/endpoint-registry";
-import { cn } from "@/lib/utils/cn";
+} from '@/lib/insights/media-fields';
+import type { EndpointDefinition, EndpointId, IdType } from '@/lib/insights/endpoint-registry';
+import { cn } from '@/lib/utils/cn';
 
 interface InstagramBuilderCardProps {
   selectedIdType: IdType;
@@ -78,8 +69,8 @@ interface InstagramBuilderCardProps {
   setPeriod: (value: InsightPeriod) => void;
   timeframe: InsightTimeframe;
   setTimeframe: (value: InsightTimeframe) => void;
-  breakdown: InsightBreakdown | "";
-  setBreakdown: (value: InsightBreakdown | "") => void;
+  breakdown: InsightBreakdown | '';
+  setBreakdown: (value: InsightBreakdown | '') => void;
   rangeDays: InsightRangeDays;
   setRangeDays: (value: InsightRangeDays) => void;
   registryValidation: {
@@ -197,9 +188,7 @@ export function InstagramBuilderCard({
           </div>
           {activeEndpoint ? (
             <div className="flex items-center gap-2">
-              <Badge className="font-mono text-xs border-border">
-                {activeEndpoint.method}
-              </Badge>
+              <Badge className="font-mono text-xs border-border">{activeEndpoint.method}</Badge>
               <code className="truncate rounded bg-muted/60 px-2 py-0.5 text-xs font-mono text-muted-foreground">
                 {activeEndpoint.path}
               </code>
@@ -232,20 +221,21 @@ export function InstagramBuilderCard({
                   searchPlaceholder="Search by caption, ID..."
                   contentClassName="min-w-[380px]"
                 />
-                {selectedMediaId && (() => {
-                  const media = accountMediaList.find((m) => m.id === selectedMediaId);
-                  return media?.permalink ? (
-                    <a
-                      href={media.permalink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                      {media.permalink}
-                    </a>
-                  ) : null;
-                })()}
+                {selectedMediaId &&
+                  (() => {
+                    const media = accountMediaList.find((m) => m.id === selectedMediaId);
+                    return media?.permalink ? (
+                      <a
+                        href={media.permalink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        {media.permalink}
+                      </a>
+                    ) : null;
+                  })()}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">
@@ -290,10 +280,10 @@ export function InstagramBuilderCard({
               label=""
               value={selectedMediaType}
               options={[
-                { value: "ALL", label: "All types" },
-                { value: "FEED", label: "Feed (Posts)" },
-                { value: "REELS", label: "Reels" },
-                { value: "STORY", label: "Story" },
+                { value: 'ALL', label: 'All types' },
+                { value: 'FEED', label: 'Feed (Posts)' },
+                { value: 'REELS', label: 'Reels' },
+                { value: 'STORY', label: 'Story' },
               ]}
               onChange={(value) => setSelectedMediaType(value)}
             />
@@ -308,7 +298,11 @@ export function InstagramBuilderCard({
                 options={activeMetricOptions.length > 0 ? activeMetricOptions : METRIC_OPTIONS}
                 value={metrics}
                 onChange={(selected) =>
-                  setMetrics(selected.length > 0 ? selected : (activeEndpoint?.defaultMetrics ?? DEFAULT_INSIGHT_METRICS))
+                  setMetrics(
+                    selected.length > 0
+                      ? selected
+                      : (activeEndpoint?.defaultMetrics ?? DEFAULT_INSIGHT_METRICS)
+                  )
                 }
                 placeholder="Search metrics..."
               />
@@ -319,23 +313,33 @@ export function InstagramBuilderCard({
                 value={period}
                 options={
                   registryValidation
-                    ? registryValidation.allowedPeriods?.map((p) => ({
+                    ? (registryValidation.allowedPeriods?.map((p) => ({
                         value: p,
-                        label: p === "day" ? "Daily" : p === "week" ? "Weekly" : p === "month" ? "Monthly" : p === "lifetime" ? "Lifetime" : p,
-                      })) ?? []
+                        label:
+                          p === 'day'
+                            ? 'Daily'
+                            : p === 'week'
+                              ? 'Weekly'
+                              : p === 'month'
+                                ? 'Monthly'
+                                : p === 'lifetime'
+                                  ? 'Lifetime'
+                                  : p,
+                      })) ?? [])
                     : periodDropdownOptions
                 }
                 onChange={(value) => setPeriod(value as InsightPeriod)}
               />
             </div>
 
-            {(registryValidation?.group === "DEMOGRAPHIC" || breakdown) ? (
+            {registryValidation?.group === 'DEMOGRAPHIC' || breakdown ? (
               <SingleSelectDropdownField
                 id="timeframe"
                 label="Timeframe"
                 value={timeframe}
                 options={
-                  registryValidation?.allowedTimeframes && registryValidation.allowedTimeframes.length > 0
+                  registryValidation?.allowedTimeframes &&
+                  registryValidation.allowedTimeframes.length > 0
                     ? registryValidation.allowedTimeframes.map((t) => ({
                         value: t,
                         label: TIMEFRAME_OPTIONS.find((o) => o.value === t)?.label ?? t,
@@ -352,7 +356,7 @@ export function InstagramBuilderCard({
                   value={breakdown || NO_BREAKDOWN_VALUE}
                   options={breakdownDropdownOptions}
                   onChange={(value) =>
-                    setBreakdown(value === NO_BREAKDOWN_VALUE ? "" : (value as InsightBreakdown))
+                    setBreakdown(value === NO_BREAKDOWN_VALUE ? '' : (value as InsightBreakdown))
                   }
                 />
                 <div className="space-y-2">
@@ -364,7 +368,7 @@ export function InstagramBuilderCard({
                     onChange={(value) => setRangeDays(parseRangeDays(value))}
                   />
 
-                  {rangeDays === "custom" ? (
+                  {rangeDays === 'custom' ? (
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label className="text-xs text-muted-foreground">Start Date</Label>
@@ -373,12 +377,12 @@ export function InstagramBuilderCard({
                             <Button
                               variant="outline"
                               className={cn(
-                                "h-10 w-full justify-start text-left font-normal",
-                                !customStartDate && "text-muted-foreground",
+                                'h-10 w-full justify-start text-left font-normal',
+                                !customStartDate && 'text-muted-foreground'
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {customStartDate ? format(customStartDate, "PPP") : "Pick a date"}
+                              {customStartDate ? format(customStartDate, 'PPP') : 'Pick a date'}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -404,12 +408,12 @@ export function InstagramBuilderCard({
                             <Button
                               variant="outline"
                               className={cn(
-                                "h-10 w-full justify-start text-left font-normal",
-                                !customEndDate && "text-muted-foreground",
+                                'h-10 w-full justify-start text-left font-normal',
+                                !customEndDate && 'text-muted-foreground'
                               )}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {customEndDate ? format(customEndDate, "PPP") : "Pick a date"}
+                              {customEndDate ? format(customEndDate, 'PPP') : 'Pick a date'}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
@@ -420,7 +424,9 @@ export function InstagramBuilderCard({
                                 setCustomEndDate(date);
                                 setEndDatePopoverOpen(false);
                                 if (customStartDate && date) {
-                                  setCustomDateError(validateCustomDateRange(customStartDate, date));
+                                  setCustomDateError(
+                                    validateCustomDateRange(customStartDate, date)
+                                  );
                                 }
                               }}
                             />
@@ -437,10 +443,16 @@ export function InstagramBuilderCard({
           <div className="grid gap-4 lg:grid-cols-2">
             <MultiSelectDropdownField
               label="Fields to retrieve"
-              options={activeFieldOptions.length > 0 ? activeFieldOptions : ACCOUNT_MEDIA_FIELD_OPTIONS}
+              options={
+                activeFieldOptions.length > 0 ? activeFieldOptions : ACCOUNT_MEDIA_FIELD_OPTIONS
+              }
               value={mediaFields}
               onChange={(selected) =>
-                setMediaFields(selected.length > 0 ? selected : (activeEndpoint?.defaultFields ?? DEFAULT_ACCOUNT_MEDIA_FIELDS))
+                setMediaFields(
+                  selected.length > 0
+                    ? selected
+                    : (activeEndpoint?.defaultFields ?? DEFAULT_ACCOUNT_MEDIA_FIELDS)
+                )
               }
               placeholder="Search fields..."
             />
@@ -480,7 +492,10 @@ export function InstagramBuilderCard({
         {registryWarnings.length > 0 ? (
           <div className="space-y-2">
             {registryWarnings.map((warning, index) => (
-              <Alert key={`registry-warn-${index}`} className="border-amber-300/80 bg-amber-50 text-amber-900">
+              <Alert
+                key={`registry-warn-${index}`}
+                className="border-amber-300/80 bg-amber-50 text-amber-900"
+              >
                 <CircleAlert className="h-4 w-4" />
                 <AlertTitle>Validation</AlertTitle>
                 <AlertDescription>{warning}</AlertDescription>
@@ -489,7 +504,7 @@ export function InstagramBuilderCard({
           </div>
         ) : null}
 
-        {rangeDays === "custom" && customDateError ? (
+        {rangeDays === 'custom' && customDateError ? (
           <Alert variant="destructive">
             <CircleAlert className="h-4 w-4" />
             <AlertTitle>Invalid date range</AlertTitle>

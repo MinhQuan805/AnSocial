@@ -1,9 +1,9 @@
-import { NextRequest } from "next/server";
+import { NextRequest } from 'next/server';
 
-import { withAuth } from "@/lib/services/auth-middleware";
-import { getServices } from "@/lib/services/factory";
-import { fail, ok } from "@/lib/utils/response";
-import { saveInsightSchema } from "@/lib/validators/input";
+import { withAuth } from '@/lib/services/auth-middleware';
+import { getServices } from '@/lib/services/factory';
+import { fail, ok } from '@/lib/utils/response';
+import { saveInsightSchema } from '@/lib/validators/input';
 
 async function handler(request: NextRequest, userId: string) {
   try {

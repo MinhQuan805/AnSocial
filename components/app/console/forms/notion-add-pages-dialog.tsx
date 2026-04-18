@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { LoaderCircle, Search, Plus } from "lucide-react";
+import { useMemo, useState } from 'react';
+import { LoaderCircle, Search, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,10 +9,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 export type NotionPageOption = {
   id: string;
@@ -38,7 +38,7 @@ export function NotionAddPagesDialog({
   onFetchAllPages,
   fetchingAllPages = false,
 }: NotionAddPagesDialogProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedPageIds, setSelectedPageIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [displayPages, setDisplayPages] = useState<NotionPageOption[]>(availablePages);
@@ -55,7 +55,7 @@ export function NotionAddPagesDialog({
     }
     if (newOpen === false) {
       setSelectedPageIds([]);
-      setSearchQuery("");
+      setSearchQuery('');
     }
     onOpenChange(newOpen);
   };
@@ -74,9 +74,7 @@ export function NotionAddPagesDialog({
 
     const query = searchQuery.toLowerCase();
     return unaddedPages.filter(
-      (page) =>
-        page.title.toLowerCase().includes(query) ||
-        page.id.toLowerCase().includes(query)
+      (page) => page.title.toLowerCase().includes(query) || page.id.toLowerCase().includes(query)
     );
   }, [unaddedPages, searchQuery]);
 
@@ -95,7 +93,7 @@ export function NotionAddPagesDialog({
       onAddPages([...currentPageIds, ...selectedPageIds]);
       // Reset state
       setSelectedPageIds([]);
-      setSearchQuery("");
+      setSearchQuery('');
       onOpenChange(false);
     } finally {
       setIsSubmitting(false);
@@ -106,7 +104,7 @@ export function NotionAddPagesDialog({
     if (newOpen === false) {
       // Reset state when closing
       setSelectedPageIds([]);
-      setSearchQuery("");
+      setSearchQuery('');
     }
     handleOpenDialog(newOpen);
   };
@@ -145,8 +143,8 @@ export function NotionAddPagesDialog({
             ) : filteredPages.length === 0 ? (
               <div className="flex items-center justify-center py-8 text-sm text-zinc-400">
                 {unaddedPages.length === 0
-                  ? "All pages have been added"
-                  : "No pages match your search"}
+                  ? 'All pages have been added'
+                  : 'No pages match your search'}
               </div>
             ) : (
               filteredPages.map((page) => (
@@ -161,12 +159,8 @@ export function NotionAddPagesDialog({
                     className="mt-0.5 h-4 w-4 rounded border-zinc-300 text-primary focus:ring-primary"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-zinc-900">
-                      {page.title}
-                    </div>
-                    <div className="text-xs font-mono text-zinc-500">
-                      {page.id}
-                    </div>
+                    <div className="text-sm font-medium text-zinc-900">{page.title}</div>
+                    <div className="text-xs font-mono text-zinc-500">{page.id}</div>
                   </div>
                 </label>
               ))
@@ -175,7 +169,7 @@ export function NotionAddPagesDialog({
 
           {selectedPageIds.length > 0 && (
             <div className="text-xs text-zinc-600">
-              {selectedPageIds.length} page{selectedPageIds.length !== 1 ? "s" : ""} selected
+              {selectedPageIds.length} page{selectedPageIds.length !== 1 ? 's' : ''} selected
             </div>
           )}
         </div>
@@ -194,7 +188,7 @@ export function NotionAddPagesDialog({
             ) : (
               <Plus className="h-4 w-4" />
             )}
-            Add {selectedPageIds.length > 0 ? `(${selectedPageIds.length})` : ""}
+            Add {selectedPageIds.length > 0 ? `(${selectedPageIds.length})` : ''}
           </Button>
         </DialogFooter>
       </DialogContent>

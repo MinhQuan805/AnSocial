@@ -1,6 +1,6 @@
-import type { LucideIcon } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
 
-export type ConsoleSidebarAction = "new-request" | "open-tutorial";
+export type ConsoleSidebarAction = 'new-request' | 'open-tutorial';
 
 type BaseItem = {
   title: string;

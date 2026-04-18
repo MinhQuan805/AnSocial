@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { LoaderCircle, Plus } from "lucide-react";
+import { useState } from 'react';
+import { LoaderCircle, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -9,12 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { toast } from "react-toastify";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'react-toastify';
 
 interface CreateNotionDatabaseDialogProps {
   open: boolean;
@@ -33,13 +33,13 @@ export function CreateNotionDatabaseDialog({
   onDatabaseCreated,
   defaultFields,
 }: CreateNotionDatabaseDialogProps) {
-  const [databaseName, setDatabaseName] = useState("");
+  const [databaseName, setDatabaseName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleCreateDatabase = async () => {
     if (!databaseName.trim()) {
-      setError("Database name is required");
+      setError('Database name is required');
       return;
     }
 
@@ -47,9 +47,9 @@ export function CreateNotionDatabaseDialog({
     setError(null);
 
     try {
-      const response = await fetch("/api/notion/databases", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/notion/databases', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           parentPageId,
           databaseTitle: databaseName.trim(),
@@ -59,16 +59,16 @@ export function CreateNotionDatabaseDialog({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to create database");
+        throw new Error(errorData.error || 'Failed to create database');
       }
 
       const database = await response.json();
       onDatabaseCreated(database);
       toast.success(`Notion database \"${database.title}\" created successfully.`);
-      setDatabaseName("");
+      setDatabaseName('');
       onOpenChange(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to create database";
+      const message = err instanceof Error ? err.message : 'Failed to create database';
       setError(message);
       toast.error(message);
     } finally {
@@ -77,7 +77,7 @@ export function CreateNotionDatabaseDialog({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !isSubmitting) {
+    if (e.key === 'Enter' && !isSubmitting) {
       e.preventDefault();
       handleCreateDatabase();
     }

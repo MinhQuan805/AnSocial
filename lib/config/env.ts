@@ -1,8 +1,8 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
-  APP_BASE_URL: z.string().url().default("https://carolyne-privileged-michele.ngrok-free.dev"),
+  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  APP_BASE_URL: z.string().url().default('https://carolyne-privileged-michele.ngrok-free.dev'),
 
   // ============================================================================
   // SUPABASE CONFIG
@@ -20,16 +20,16 @@ const envSchema = z.object({
   // PROVIDER INTEGRATIONS
   // ============================================================================
   // Facebook/Meta
-  META_APP_ID: z.string().default(""),
-  META_APP_SECRET: z.string().default(""),
+  META_APP_ID: z.string().default(''),
+  META_APP_SECRET: z.string().default(''),
   META_BUSINESS_CONFIG_ID: z.string().optional(),
   META_CALLBACK_URL: z.string().url().optional(),
 
   // Notion
-  NOTION_CLIENT_ID: z.string().default(""),
-  NOTION_CLIENT_SECRET: z.string().default(""),
+  NOTION_CLIENT_ID: z.string().default(''),
+  NOTION_CLIENT_SECRET: z.string().default(''),
   NOTION_REDIRECT_URI: z.string().url().optional(),
-  NOTION_VERSION: z.string().default("2022-06-28"),
+  NOTION_VERSION: z.string().default('2022-06-28'),
 
   // TikTok (Optional - add when ready)
   TIKTOK_CLIENT_ID: z.string().optional(),
@@ -83,8 +83,8 @@ const parsed = envSchema.safeParse({
 
 if (!parsed.success) {
   const formatted = parsed.error.issues
-    .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
-    .join("; ");
+    .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+    .join('; ');
   throw new Error(`Invalid environment configuration: ${formatted}`);
 }
 
@@ -102,7 +102,7 @@ export const TOKEN_ENCRYPTION_KEY = env.TOKEN_ENCRYPTION_KEY ?? env.SUPABASE_SER
 
 // Base URL helper - define before use
 export const getBaseUrl = () => {
-  return env.APP_BASE_URL.replace(/\/$/, "");
+  return env.APP_BASE_URL.replace(/\/$/, '');
 };
 
 // OAuth Redirect URIs

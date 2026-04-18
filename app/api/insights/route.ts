@@ -1,20 +1,20 @@
-import { NextRequest } from "next/server";
+import { NextRequest } from 'next/server';
 
-import { withAuth } from "@/lib/services/auth-middleware";
-import { getServices } from "@/lib/services/factory";
-import { fail, ok } from "@/lib/utils/response";
-import { insightRequestSchema } from "@/lib/validators/input";
+import { withAuth } from '@/lib/services/auth-middleware';
+import { getServices } from '@/lib/services/factory';
+import { fail, ok } from '@/lib/utils/response';
+import { insightRequestSchema } from '@/lib/validators/input';
 
 async function handler(request: NextRequest, userId: string) {
   try {
-    console.log("[DEBUG] 🔍 Insights request started for userId:", userId);
+    console.log('[DEBUG] 🔍 Insights request started for userId:', userId);
     const services = getServices();
 
     const body = await request.json();
-    console.log("[DEBUG] 📦 Request body:", JSON.stringify(body));
-    
+    console.log('[DEBUG] 📦 Request body:', JSON.stringify(body));
+
     const payload = insightRequestSchema.parse(body);
-    console.log("[DEBUG] ✅ Request validated");
+    console.log('[DEBUG] ✅ Request validated');
 
     const report = await services.marketingInsightsService.generateReport({
       userId,
@@ -28,10 +28,10 @@ async function handler(request: NextRequest, userId: string) {
       timeframe: payload.timeframe,
     });
 
-    console.log("[DEBUG] 📊 Report generated successfully");
+    console.log('[DEBUG] 📊 Report generated successfully');
     return ok(report);
   } catch (error) {
-    console.error("[ERROR] 🔴 Insights API error:", error);
+    console.error('[ERROR] 🔴 Insights API error:', error);
     return fail(error);
   }
 }

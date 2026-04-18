@@ -4,17 +4,15 @@
  */
 export function getAuthHeaders(): HeadersInit {
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    'Content-Type': 'application/json',
   };
 
   // Get sessionId from sessionStorage (set by auth popup)
-  const sessionId = typeof window !== "undefined" 
-    ? sessionStorage.getItem("ana_session_id")
-    : null;
+  const sessionId = typeof window !== 'undefined' ? sessionStorage.getItem('ana_session_id') : null;
 
   if (sessionId) {
-    headers["Authorization"] = `Bearer ${sessionId}`;
-    headers["x-ana-session-id"] = sessionId;
+    headers['Authorization'] = `Bearer ${sessionId}`;
+    headers['x-ana-session-id'] = sessionId;
   }
 
   return headers;
@@ -24,10 +22,7 @@ export function getAuthHeaders(): HeadersInit {
  * Fetch wrapper that automatically includes auth headers and credentials
  * Handles both cookie-based and token-based auth
  */
-export function fetchWithAuth(
-  url: string | URL,
-  options?: RequestInit,
-): Promise<Response> {
+export function fetchWithAuth(url: string | URL, options?: RequestInit): Promise<Response> {
   const authHeaders = getAuthHeaders();
   const mergedHeaders = {
     ...authHeaders,
@@ -36,7 +31,7 @@ export function fetchWithAuth(
 
   return fetch(url, {
     ...options,
-    credentials: "include",  // Always include credentials for cookie auth
+    credentials: 'include', // Always include credentials for cookie auth
     headers: mergedHeaders,
   });
 }

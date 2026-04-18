@@ -1,25 +1,25 @@
-import type { NextRequest, NextResponse } from "next/server";
-import type { IProvider, ProviderConnectionPayload } from "@/lib/core/auth.types";
-import type { IProviderConnectionRepository } from "@/lib/core/auth.types";
-import { OauthStateService } from "../auth/oauth-state.service";
-import { AuthError } from "@/lib/core/errors";
+import type { NextRequest, NextResponse } from 'next/server';
+import type { IProvider, ProviderConnectionPayload } from '@/lib/core/auth.types';
+import type { IProviderConnectionRepository } from '@/lib/core/auth.types';
+import { OauthStateService } from '../auth/oauth-state.service';
+import { AuthError } from '@/lib/core/errors';
 
 /**
  * Base class for provider implementations
  * Provides common OAuth flow logic and utilities
- * 
+ *
  * Extend this class to add new providers:
- * 
+ *
  * export class TikTokProvider extends BaseProvider {
  *   type = 'tiktok';
- *   
+ *
  *   buildAuthorizeUrl(state: string): string {
  *     const url = new URL('https://tiktok.com/oauth/authorize');
  *     url.searchParams.set('client_id', env.TIKTOK_CLIENT_ID);
  *     // ... other params
  *     return url.toString();
  *   }
- *   
+ *
  *   async executeAuth(code: string): Promise<ProviderConnectionPayload> {
  *     const tokens = await this.exchangeCode(code);
  *     const user = await this.getUserInfo(tokens.accessToken);
@@ -37,18 +37,15 @@ export abstract class BaseProvider implements IProvider {
 
   constructor(
     protected readonly connectionRepository: IProviderConnectionRepository,
-    protected readonly stateService: OauthStateService,
+    protected readonly stateService: OauthStateService
   ) {}
 
   /**
    * Issue CSRF state for OAuth flow
    */
-  public issueState(args: {
-    response: NextResponse;
-    flowMode?: "redirect" | "popup";
-  }): string {
+  public issueState(args: { response: NextResponse; flowMode?: 'redirect' | 'popup' }): string {
     return this.stateService.issue(this.type, args.response, {
-      flowMode: args.flowMode ?? "redirect",
+      flowMode: args.flowMode ?? 'redirect',
     });
   }
 
@@ -60,10 +57,7 @@ export abstract class BaseProvider implements IProvider {
   /**
    * Abstract method - each provider handles its OAuth completion
    */
-  abstract executeAuth(
-    code: string,
-    redirectUri: string,
-  ): Promise<ProviderConnectionPayload>;
+  abstract executeAuth(code: string, redirectUri: string): Promise<ProviderConnectionPayload>;
 
   /**
    * Complete OAuth flow: validate state, exchange code, save connection
@@ -84,7 +78,7 @@ export abstract class BaseProvider implements IProvider {
     // This should be provided by auth middleware
     const userId = this.extractUserIdFromRequest(args.request);
     if (!userId) {
-      throw new AuthError("User not authenticated. Google login required.");
+      throw new AuthError('User not authenticated. Google login required.');
     }
 
     // Execute provider-specific OAuth completion
@@ -134,7 +128,7 @@ export abstract class BaseProvider implements IProvider {
   protected extractUserIdFromRequest(request: NextRequest): string | null {
     // The auth middleware will set this header/cookie
     // For now, return null and implement based on your auth middleware
-    const userId = request.headers.get("x-user-id");
+    const userId = request.headers.get('x-user-id');
     return userId;
   }
 
@@ -144,15 +138,15 @@ export abstract class BaseProvider implements IProvider {
   protected async exchangeCode(
     code: string,
     authUrl: string,
-    params: Record<string, string>,
+    params: Record<string, string>
   ): Promise<{ accessToken: string; refreshToken?: string; expiresIn: number }> {
     const response = await fetch(authUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         client_id: this.clientId,
         client_secret: this.clientSecret,
-        grant_type: "authorization_code",
+        grant_type: 'authorization_code',
         code,
         redirect_uri: this.redirectUri,
         ...params,
@@ -164,7 +158,7 @@ export abstract class BaseProvider implements IProvider {
       throw new AuthError(`${this.type} token exchange failed: ${error}`);
     }
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       access_token: string;
       refresh_token?: string;
       expires_in: number;
@@ -181,22 +175,18 @@ export abstract class BaseProvider implements IProvider {
   /**
    * Helper: Make authenticated API request to provider
    */
-  protected async apiCall<T>(
-    url: string,
-    accessToken: string,
-    options?: RequestInit,
-  ): Promise<T> {
+  protected async apiCall<T>(url: string, accessToken: string, options?: RequestInit): Promise<T> {
     const response = await fetch(url, {
       ...options,
       headers: {
         ...options?.headers,
-        "Authorization": `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
 
     if (!response.ok) {
       throw new AuthError(
-        `${this.type} API call failed: ${response.status} ${response.statusText}`,
+        `${this.type} API call failed: ${response.status} ${response.statusText}`
       );
     }
 
@@ -213,7 +203,7 @@ export function createConnectionPayload(
   accessToken: string,
   expiresIn?: number,
   refreshToken?: string,
-  metadata?: Record<string, any>,
+  metadata?: Record<string, any>
 ): ProviderConnectionPayload {
   return {
     providerType,

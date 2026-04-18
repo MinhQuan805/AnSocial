@@ -5,9 +5,11 @@
 Two comprehensive leadership skills have been created for your executive team:
 
 ### 1. CTO Advisor ✅
+
 Strategic technology leadership skill providing frameworks for architecture decisions, team scaling, technical debt management, and engineering excellence.
 
 ### 2. CEO Advisor ✅
+
 Comprehensive executive leadership skill providing strategic planning, financial modeling, board governance, investor relations, and organizational transformation tools.
 
 ## Skill Components Overview
@@ -15,15 +17,18 @@ Comprehensive executive leadership skill providing strategic planning, financial
 ### CTO Advisor Skill
 
 **Scripts Included**:
+
 - `tech_debt_analyzer.py` - Analyzes technical debt and prioritizes reduction strategies
 - `team_scaling_calculator.py` - Optimizes engineering team growth and structure
 
 **Reference Frameworks**:
+
 - Architecture Decision Records (ADR) framework
 - Technology evaluation and vendor selection
 - Engineering metrics and KPIs (DORA metrics)
 
 **Key Capabilities**:
+
 - Technical debt assessment and prioritization
 - Engineering team scaling optimization
 - Architecture decision documentation
@@ -33,15 +38,18 @@ Comprehensive executive leadership skill providing strategic planning, financial
 ### CEO Advisor Skill
 
 **Scripts Included**:
+
 - `strategy_analyzer.py` - Comprehensive strategic position analysis
 - `financial_scenario_analyzer.py` - Multi-scenario financial modeling
 
 **Reference Frameworks**:
+
 - Executive decision-making frameworks
 - Board governance and investor relations
 - Leadership and organizational culture
 
 **Key Capabilities**:
+
 - Strategic planning and analysis
 - Financial scenario modeling
 - Board meeting management
@@ -53,6 +61,7 @@ Comprehensive executive leadership skill providing strategic planning, financial
 ### Phase 1: Deployment (Week 1)
 
 #### For CTO
+
 1. Deploy `cto-advisor.zip`
 2. Run technical debt assessment
 3. Evaluate current team structure
@@ -60,6 +69,7 @@ Comprehensive executive leadership skill providing strategic planning, financial
 5. Implement DORA metrics
 
 #### For CEO
+
 1. Deploy `ceo-advisor.zip`
 2. Run strategic analysis
 3. Model financial scenarios
@@ -69,12 +79,14 @@ Comprehensive executive leadership skill providing strategic planning, financial
 ### Phase 2: Integration (Weeks 2-4)
 
 #### Cross-Functional Alignment
+
 - Align technology strategy with business strategy
 - Coordinate resource allocation
 - Synchronize roadmaps
 - Establish joint KPIs
 
 #### Process Implementation
+
 - Weekly leadership sync
 - Monthly board reporting
 - Quarterly strategic reviews
@@ -83,6 +95,7 @@ Comprehensive executive leadership skill providing strategic planning, financial
 ### Phase 3: Optimization (Month 2+)
 
 #### Continuous Improvement
+
 - Refine frameworks based on usage
 - Customize scripts for specific needs
 - Develop company-specific templates
@@ -93,6 +106,7 @@ Comprehensive executive leadership skill providing strategic planning, financial
 ### CTO Scenarios
 
 #### Scenario 1: Technical Debt Crisis
+
 ```bash
 # Assess current technical debt
 python scripts/tech_debt_analyzer.py
@@ -103,6 +117,7 @@ python scripts/tech_debt_analyzer.py
 ```
 
 #### Scenario 2: Rapid Team Scaling
+
 ```bash
 # Plan optimal team growth
 python scripts/team_scaling_calculator.py
@@ -112,6 +127,7 @@ python scripts/team_scaling_calculator.py
 ```
 
 #### Scenario 3: Architecture Decision
+
 - Use ADR template from references
 - Document context, options, decision
 - Track consequences and learnings
@@ -119,6 +135,7 @@ python scripts/team_scaling_calculator.py
 ### CEO Scenarios
 
 #### Scenario 1: Strategic Planning
+
 ```bash
 # Analyze strategic position
 python scripts/strategy_analyzer.py
@@ -129,6 +146,7 @@ python scripts/strategy_analyzer.py
 ```
 
 #### Scenario 2: Fundraising Preparation
+
 ```bash
 # Model growth scenarios
 python scripts/financial_scenario_analyzer.py
@@ -139,6 +157,7 @@ python scripts/financial_scenario_analyzer.py
 ```
 
 #### Scenario 3: Board Meeting Prep
+
 - Use board package template
 - Prepare governance materials
 - Structure executive session topics
@@ -148,18 +167,21 @@ python scripts/financial_scenario_analyzer.py
 ### Technology Metrics (CTO)
 
 **Engineering Performance**:
+
 - Deployment frequency: >1/day
 - Lead time: <1 day
 - MTTR: <1 hour
 - Change failure rate: <15%
 
 **Team Health**:
+
 - Velocity stability: ±10%
 - Code coverage: >80%
 - Technical debt: <10%
 - Attrition: <10%
 
 **System Performance**:
+
 - Uptime: >99.9%
 - Response time: <200ms
 - Error rate: <0.1%
@@ -168,18 +190,21 @@ python scripts/financial_scenario_analyzer.py
 ### Business Metrics (CEO)
 
 **Financial Performance**:
+
 - Revenue growth: >30% YoY
 - Gross margin: >70%
 - EBITDA positive by Y2
 - Cash runway: >18 months
 
 **Organizational Health**:
+
 - Employee NPS: >50
 - Customer NPS: >70
 - Board confidence: High
 - Culture score: >8/10
 
 **Strategic Progress**:
+
 - OKR achievement: >70%
 - Market share growth
 - Innovation pipeline
@@ -190,24 +215,28 @@ python scripts/financial_scenario_analyzer.py
 ### CTO-CEO Collaboration Points
 
 #### 1. Strategic Alignment
+
 - Technology enables business strategy
 - Business priorities drive tech investments
 - Joint roadmap development
 - Shared success metrics
 
 #### 2. Resource Optimization
+
 - Coordinated budget planning
 - Talent strategy alignment
 - Vendor consolidation
 - Investment prioritization
 
 #### 3. Risk Management
+
 - Technical risk assessment
 - Business continuity planning
 - Security and compliance
 - Crisis response protocols
 
 #### 4. Innovation Drive
+
 - R&D investment strategy
 - Digital transformation
 - Competitive differentiation
@@ -218,24 +247,28 @@ python scripts/financial_scenario_analyzer.py
 ### For Effective Usage
 
 #### Daily Habits
+
 - Review key metrics dashboard
 - Check strategic alignment
 - Address critical decisions
 - Communicate priorities
 
 #### Weekly Rituals
+
 - Leadership team sync
 - Progress reviews
 - Stakeholder updates
 - Course corrections
 
 #### Monthly Processes
+
 - Deep strategic reviews
 - Financial analysis
 - Organizational health check
 - Board preparation
 
 #### Quarterly Milestones
+
 - Strategy adjustment
 - Performance evaluation
 - Planning cycles
@@ -244,12 +277,14 @@ python scripts/financial_scenario_analyzer.py
 ### Common Pitfalls to Avoid
 
 #### CTO Pitfalls
+
 - Over-engineering solutions
 - Ignoring technical debt
 - Scaling too fast/slow
 - Misaligned architecture
 
 #### CEO Pitfalls
+
 - Analysis paralysis
 - Poor stakeholder management
 - Culture neglect
@@ -260,16 +295,19 @@ python scripts/financial_scenario_analyzer.py
 ### CTO Advisor ROI
 
 **Time Savings**:
+
 - Decision making: 50% faster
 - Team planning: 60% more accurate
 - Architecture reviews: 40% more efficient
 
 **Cost Benefits**:
+
 - Technical debt reduction: $2M+ saved
 - Optimal scaling: 30% lower hiring costs
 - Better decisions: Avoid $5M+ mistakes
 
 **Quality Improvements**:
+
 - System reliability: 99.9%+
 - Team productivity: +25%
 - Architecture quality: Significantly improved
@@ -277,16 +315,19 @@ python scripts/financial_scenario_analyzer.py
 ### CEO Advisor ROI
 
 **Strategic Value**:
+
 - Better strategic decisions
 - Faster execution
 - Improved stakeholder confidence
 
 **Financial Impact**:
+
 - Optimized capital allocation
 - Better fundraising outcomes
 - Increased valuation
 
 **Organizational Benefits**:
+
 - Stronger culture
 - Better talent retention
 - Higher performance
@@ -294,18 +335,21 @@ python scripts/financial_scenario_analyzer.py
 ## Success Stories (Projected)
 
 ### After 3 Months
+
 - Technical debt reduced by 30%
 - Engineering team optimally structured
 - Strategic clarity achieved
 - Board relationships strengthened
 
 ### After 6 Months
+
 - DORA metrics at "Elite" level
 - Team scaling on track
 - Strategic initiatives delivering
 - Culture transformation visible
 
 ### After 12 Months
+
 - Engineering excellence achieved
 - Organizational capabilities transformed
 - Market position strengthened
@@ -316,12 +360,14 @@ python scripts/financial_scenario_analyzer.py
 ### Recommended Stack
 
 #### For CTO
+
 - **Metrics**: DataDog, New Relic
 - **Planning**: Jira, Linear
 - **Architecture**: Draw.io, Confluence
 - **Code**: GitHub, GitLab
 
 #### For CEO
+
 - **Strategy**: Cascade, Perdoo
 - **Financial**: Excel, Causal
 - **Board**: Diligent, BoardEffect
@@ -330,12 +376,14 @@ python scripts/financial_scenario_analyzer.py
 ## Support & Evolution
 
 ### Skill Maintenance
+
 - Regular framework updates
 - Script enhancements
 - Template refinements
 - Best practice sharing
 
 ### Community Building
+
 - Leadership forums
 - Peer learning
 - Case study sharing
@@ -344,6 +392,7 @@ python scripts/financial_scenario_analyzer.py
 ### Future Enhancements
 
 #### Potential Additional Skills
+
 - **CFO Advisor**: Financial management, fundraising, investor relations
 - **CPO Advisor**: Product strategy, roadmapping, customer insights
 - **CMO Advisor**: Marketing strategy, brand, demand generation
@@ -352,6 +401,7 @@ python scripts/financial_scenario_analyzer.py
 ## Quick Reference
 
 ### CTO Quick Commands
+
 ```bash
 # Analyze technical debt
 python scripts/tech_debt_analyzer.py
@@ -364,6 +414,7 @@ cat references/architecture_decision_records.md
 ```
 
 ### CEO Quick Commands
+
 ```bash
 # Analyze strategy
 python scripts/strategy_analyzer.py
@@ -382,6 +433,7 @@ These C-Level leadership skills provide comprehensive frameworks, tools, and gui
 The synergy between CTO and CEO skills creates a powerful leadership toolkit that addresses both technical and business challenges, ensuring aligned, effective leadership across the organization.
 
 **Files Available**:
+
 - [CTO Advisor Skill](computer:///mnt/user-data/outputs/cto-advisor.zip)
 - [CEO Advisor Skill](computer:///mnt/user-data/outputs/ceo-advisor.zip)
 

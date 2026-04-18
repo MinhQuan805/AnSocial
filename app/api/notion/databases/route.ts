@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
-import { withAuth } from "@/lib/services/auth-middleware";
-import { getServices } from "@/lib/services/factory";
+import { withAuth } from '@/lib/services/auth-middleware';
+import { getServices } from '@/lib/services/factory';
 
 /**
  * POST /api/notion/databases
@@ -13,9 +13,9 @@ async function handler(request: NextRequest, userId: string) {
 
   return NextResponse.json(
     {
-      error: "Notion database creation is disabled in this build.",
+      error: 'Notion database creation is disabled in this build.',
     },
-    { status: 410 },
+    { status: 410 }
   );
 }
 

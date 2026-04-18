@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { Clock3, LoaderCircle, Plus, Download, Zap } from "lucide-react";
+import { useMemo, useState } from 'react';
+import { Clock3, LoaderCircle, Plus, Download, Zap } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { NotionPageSelectField } from "@/components/app/console/forms/notion-page-select-field";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { NotionPageSelectField } from '@/components/app/console/forms/notion-page-select-field';
 import {
   SingleSelectDropdownField,
   type SingleSelectDropdownOption,
-} from "@/components/app/console/forms/single-select-dropdown-field";
-import { CreateNotionDatabaseDialog } from "@/components/app/console/forms/create-notion-database-dialog";
-import { CreateNotionPageDialog } from "@/components/app/console/forms/create-notion-page-dialog";
-import type { SessionView, MediaReport, InsightReport } from "@/components/app/console/types";
+} from '@/components/app/console/forms/single-select-dropdown-field';
+import { CreateNotionDatabaseDialog } from '@/components/app/console/forms/create-notion-database-dialog';
+import { CreateNotionPageDialog } from '@/components/app/console/forms/create-notion-page-dialog';
+import type { SessionView, MediaReport, InsightReport } from '@/components/app/console/types';
 
 const SCHEDULE_FREQUENCY_OPTIONS: SingleSelectDropdownOption[] = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
 ];
 
 interface IntegrationPanelProps {
@@ -27,11 +27,11 @@ interface IntegrationPanelProps {
   onNotionPagesChange: (pageIds: string[]) => void;
   notionTableByPage: Record<string, string>;
   onNotionTableChange: (pageId: string, databaseId: string) => void;
-  autoSchedule: SessionView["autoSchedule"];
-  onAutoScheduleChange: (next: SessionView["autoSchedule"]) => void;
+  autoSchedule: SessionView['autoSchedule'];
+  onAutoScheduleChange: (next: SessionView['autoSchedule']) => void;
   onSaveSchedule: () => void;
   scheduleSaving: boolean;
-  onPagesRefreshed?: (pages: SessionView["notionPages"]) => void;
+  onPagesRefreshed?: (pages: SessionView['notionPages']) => void;
   onDatabaseCreated?: (database: { id: string; title: string; parentPageId: string }) => void;
   mediaReport?: MediaReport | null;
   insightReport?: InsightReport | null;
@@ -63,18 +63,18 @@ export function IntegrationPanel({
 
   const selectedNotionPages = useMemo(
     () => session.notionPages.filter((page) => selectedNotionPageIds.includes(page.id)),
-    [selectedNotionPageIds, session.notionPages],
+    [selectedNotionPageIds, session.notionPages]
   );
 
   const refreshPages = async () => {
     try {
-      const response = await fetch("/api/notion/pages");
-      if (!response.ok) throw new Error("Failed to refresh pages");
+      const response = await fetch('/api/notion/pages');
+      if (!response.ok) throw new Error('Failed to refresh pages');
 
       const pages = await response.json();
       onPagesRefreshed?.(pages);
     } catch (error) {
-      console.error("Failed to refresh Notion pages:", error);
+      console.error('Failed to refresh Notion pages:', error);
     }
   };
 
@@ -83,7 +83,7 @@ export function IntegrationPanel({
     try {
       await refreshPages();
     } catch (error) {
-      console.error("Failed to retrieve Notion pages:", error);
+      console.error('Failed to retrieve Notion pages:', error);
     } finally {
       setRetrievingPages(false);
     }
@@ -106,11 +106,11 @@ export function IntegrationPanel({
     if (insightReport) {
       const metricsFromQuery = insightReport.query.metrics;
       const metricsFromResults = insightReport.accounts.flatMap((account) =>
-        account.metricResults.map((metricResult) => metricResult.metric),
+        account.metricResults.map((metricResult) => metricResult.metric)
       );
       const metrics = Array.from(new Set([...metricsFromQuery, ...metricsFromResults]));
 
-      return ["generatedAt", "endTime", "metric", "period", "totalValue", ...metrics];
+      return ['generatedAt', 'endTime', 'metric', 'period', 'totalValue', ...metrics];
     }
 
     return [];
@@ -125,21 +125,21 @@ export function IntegrationPanel({
     }
     setCreateDatabaseOpen(false);
     setSelectedPageForDatabase(null);
-  }
+  };
 
   const handlePageCreated = (page: { id: string; title: string }) => {
     // After creating page, refresh the pages list to show the new page
     setCreatePageOpen(false);
     // Just refresh the pages list without OAuth popup
     refreshPages();
-  }
+  };
 
   const handleSelectAnalysisPage = () => {
-    const analysisPage = session.notionPages.find((p) => p.title === "Analysis");
+    const analysisPage = session.notionPages.find((p) => p.title === 'Analysis');
     if (analysisPage && !selectedNotionPageIds.includes(analysisPage.id)) {
       onNotionPagesChange([...selectedNotionPageIds, analysisPage.id]);
     }
-  }
+  };
 
   const tableOptionsByPage = useMemo(() => {
     const globalTableOptions = session.notionDatabases.map((database) => ({
@@ -149,26 +149,26 @@ export function IntegrationPanel({
     }));
 
     // Find the default "Analysis" page
-    const defaultPage = session.notionPages.find((p) => p.title === "Analysis");
+    const defaultPage = session.notionPages.find((p) => p.title === 'Analysis');
     const defaultPageTables = defaultPage
       ? globalTableOptions.filter((db) => db.parentPageId === defaultPage.id)
       : [];
 
     return selectedNotionPages.reduce<Record<string, SingleSelectDropdownOption[]>>((acc, page) => {
       const scoped = globalTableOptions.filter((database) => database.parentPageId === page.id);
-      
+
       // Use scoped tables if available, otherwise use ONLY default page tables
       let effectiveTables: typeof globalTableOptions = [];
-      let groupLabel = "";
+      let groupLabel = '';
 
       if (scoped.length > 0) {
         effectiveTables = scoped;
-        groupLabel = "Tables in this page";
+        groupLabel = 'Tables in this page';
       } else if (defaultPageTables.length > 0) {
         effectiveTables = defaultPageTables;
         groupLabel = `Tables from default page (${defaultPage?.title})`;
       }
-      
+
       // Create options from existing tables
       const options: SingleSelectDropdownOption[] = effectiveTables.map((database) => ({
         value: database.id,
@@ -180,9 +180,9 @@ export function IntegrationPanel({
       // Add "Create Default Table" option at the beginning
       const defaultTableOption: SingleSelectDropdownOption = {
         value: `__create_default_${page.id}__`,
-        label: "Create Default Table",
-        description: "Auto-create table with required fields",
-        group: "Actions",
+        label: 'Create Default Table',
+        description: 'Auto-create table with required fields',
+        group: 'Actions',
       };
 
       acc[page.id] = [defaultTableOption, ...options];
@@ -273,7 +273,7 @@ export function IntegrationPanel({
                 <SingleSelectDropdownField
                   label="Select or create table"
                   labelClassName="text-xs text-zinc-600"
-                  value={notionTableByPage[page.id] || ""}
+                  value={notionTableByPage[page.id] || ''}
                   options={tableOptionsByPage[page.id] ?? []}
                   onChange={(nextValue) => {
                     onNotionTableChange(page.id, nextValue);

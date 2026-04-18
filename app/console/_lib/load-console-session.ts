@@ -1,6 +1,6 @@
-import type { SessionView } from "@/components/app/console/types";
-import { env } from "@/lib/config/env";
-import { getServices } from "@/lib/services/factory";
+import type { SessionView } from '@/components/app/console/types';
+import { env } from '@/lib/config/env';
+import { getServices } from '@/lib/services/factory';
 
 export async function loadConsoleSession(): Promise<SessionView> {
   const services = getServices();
@@ -22,9 +22,9 @@ export async function loadConsoleSession(): Promise<SessionView> {
     facebookTokenExpired: false,
     autoSchedule: {
       enabled: scheduleConfig?.enabled ?? false,
-      frequency: scheduleConfig?.frequency ?? "daily",
-      time: scheduleConfig?.time ?? "09:00",
-      timezone: scheduleConfig?.timezone ?? "UTC",
+      frequency: scheduleConfig?.frequency ?? 'daily',
+      time: scheduleConfig?.time ?? '09:00',
+      timezone: scheduleConfig?.timezone ?? 'UTC',
     },
     remainingFreeSaves: Math.max(env.APP_FREE_SAVE_LIMIT - saveCount, 0),
     accounts: [],

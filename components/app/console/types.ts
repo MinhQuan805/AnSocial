@@ -3,8 +3,8 @@ import type {
   InsightBreakdown,
   InsightRangeDays,
   InsightTimeframe,
-} from "@/lib/core/domain";
-import type { EndpointId, IdType } from "@/lib/insights/endpoint-registry";
+} from '@/lib/core/domain';
+import type { EndpointId, IdType } from '@/lib/insights/endpoint-registry';
 
 export type { AutoScheduleSettings };
 
@@ -29,14 +29,14 @@ export type SessionView = {
 export type InsightReport = {
   query: {
     requestedMetrics: string[];
-    period: "day" | "lifetime";
+    period: 'day' | 'lifetime';
     rangeDays: InsightRangeDays;
     metrics: string[];
-    metricType: "total_value" | "time_series";
+    metricType: 'total_value' | 'time_series';
     timeframe?: InsightTimeframe;
     breakdown?: InsightBreakdown;
     warnings: string[];
-    mediaFormat: "ALL" | "IMAGE" | "VIDEO" | "REEL" | "CAROUSEL_ALBUM";
+    mediaFormat: 'ALL' | 'IMAGE' | 'VIDEO' | 'REEL' | 'CAROUSEL_ALBUM';
     urlPreview: string;
   };
   invalidAccounts: string[];
@@ -100,7 +100,7 @@ export type HttpRequestReport = {
 };
 
 /** Legacy endpoint key — kept for backward compatibility with API routes */
-export type EndpointKey = "account_insights" | "account_media" | "tagged_media";
+export type EndpointKey = 'account_insights' | 'account_media' | 'tagged_media';
 
 /** New endpoint selection state */
 export type EndpointSelection = {

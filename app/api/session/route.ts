@@ -1,8 +1,8 @@
-import { NextRequest } from "next/server";
+import { NextRequest } from 'next/server';
 
-import { env } from "@/lib/config/env";
-import { getServices } from "@/lib/services/factory";
-import { fail, ok } from "@/lib/utils/response";
+import { env } from '@/lib/config/env';
+import { getServices } from '@/lib/services/factory';
+import { fail, ok } from '@/lib/utils/response';
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,9 +1,9 @@
-import type { IProvider, ProviderRegistry } from "@/lib/core/auth.types";
-import { AuthError } from "@/lib/core/errors";
+import type { IProvider, ProviderRegistry } from '@/lib/core/auth.types';
+import { AuthError } from '@/lib/core/errors';
 
 /**
  * ProviderRegistry - Factory Pattern Implementation
- * 
+ *
  * Manages provider instances and allows extensions
  * Example usage:
  *   - registry.register('tiktok', new TikTokProvider(...))
@@ -29,7 +29,9 @@ export class ProviderRegistryImpl implements ProviderRegistry {
   public getProvider(type: string): IProvider {
     const provider = this.providers.get(type);
     if (!provider) {
-      throw new AuthError(`Provider '${type}' not found. Available: ${Array.from(this.providers.keys()).join(", ")}`);
+      throw new AuthError(
+        `Provider '${type}' not found. Available: ${Array.from(this.providers.keys()).join(', ')}`
+      );
     }
     return provider;
   }
@@ -65,15 +67,15 @@ export class ProviderRegistryImpl implements ProviderRegistry {
 
 /**
  * Usage Example (in factory.ts):
- * 
+ *
  * const registry = new ProviderRegistryImpl();
  * registry.register('facebook', new FacebookProvider(...));
  * registry.register('tiktok', new TikTokProvider(...));
- * 
+ *
  * // Extensible - add new providers without changing existing code:
  * registry.register('instagram', new InstagramProvider(...));
  * registry.register('youtube', new YouTubeProvider(...));
- * 
+ *
  * // Usage in API routes:
  * const facebookProvider = registry.getProvider('facebook');
  * const state = facebookProvider.issueState({ response });

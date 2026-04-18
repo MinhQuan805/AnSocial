@@ -1,30 +1,25 @@
-import { NextRequest } from "next/server";
-import { z } from "zod";
+import { NextRequest } from 'next/server';
+import { z } from 'zod';
 
-import { ValidationError } from "@/lib/core/errors";
-import { fail, ok } from "@/lib/utils/response";
+import { ValidationError } from '@/lib/core/errors';
+import { fail, ok } from '@/lib/utils/response';
 
 const requestSchema = z.object({
   url: z.string().min(1),
-  method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]).default("GET"),
+  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']).default('GET'),
   headers: z.record(z.string(), z.string()).default({}),
   params: z
     .array(
       z.object({
         key: z.string().trim().min(1),
-        value: z.string().default(""),
-      }),
+        value: z.string().default(''),
+      })
     )
     .default([]),
   body: z.string().optional(),
 });
 
-const BLOCKED_HEADER_KEYS = new Set([
-  "host",
-  "connection",
-  "content-length",
-  "accept-encoding",
-]);
+const BLOCKED_HEADER_KEYS = new Set(['host', 'connection', 'content-length', 'accept-encoding']);
 
 function sanitizeHeaders(input: Record<string, string>): Record<string, string> {
   const output: Record<string, string> = {};
@@ -54,7 +49,7 @@ function sanitizeHeaders(input: Record<string, string>): Record<string, string> 
 }
 
 function shouldSendBody(method: string): boolean {
-  return method !== "GET" && method !== "HEAD";
+  return method !== 'GET' && method !== 'HEAD';
 }
 
 async function parseUpstreamBody(response: Response): Promise<unknown> {
@@ -63,8 +58,8 @@ async function parseUpstreamBody(response: Response): Promise<unknown> {
     return null;
   }
 
-  const contentType = response.headers.get("content-type") ?? "";
-  if (contentType.toLowerCase().includes("application/json")) {
+  const contentType = response.headers.get('content-type') ?? '';
+  if (contentType.toLowerCase().includes('application/json')) {
     try {
       return JSON.parse(text) as unknown;
     } catch {
@@ -81,12 +76,12 @@ export async function POST(request: NextRequest) {
     const payload = requestSchema.parse(raw);
 
     const targetUrl = new URL(payload.url);
-    if (targetUrl.protocol !== "http:" && targetUrl.protocol !== "https:") {
-      throw new ValidationError("Only http:// or https:// URLs are supported.");
+    if (targetUrl.protocol !== 'http:' && targetUrl.protocol !== 'https:') {
+      throw new ValidationError('Only http:// or https:// URLs are supported.');
     }
 
     if (payload.params.length > 0) {
-      targetUrl.search = "";
+      targetUrl.search = '';
       for (const parameter of payload.params) {
         targetUrl.searchParams.set(parameter.key.trim(), parameter.value);
       }
@@ -99,7 +94,7 @@ export async function POST(request: NextRequest) {
       method: payload.method,
       headers: outboundHeaders,
       body: includeBody ? payload.body : undefined,
-      cache: "no-store",
+      cache: 'no-store',
     });
 
     const upstreamData = await parseUpstreamBody(upstream);
@@ -114,7 +109,10 @@ export async function POST(request: NextRequest) {
         url: targetUrl.toString(),
         method: payload.method,
         headers: outboundHeaders,
-        params: Array.from(targetUrl.searchParams.entries()).map(([key, value]) => ({ key, value })),
+        params: Array.from(targetUrl.searchParams.entries()).map(([key, value]) => ({
+          key,
+          value,
+        })),
         body: includeBody ? payload.body : undefined,
       },
       response: {
@@ -128,11 +126,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const issue = error.issues[0];
-      return fail(new ValidationError(issue?.message ?? "Invalid HTTP request payload."));
+      return fail(new ValidationError(issue?.message ?? 'Invalid HTTP request payload.'));
     }
 
     if (error instanceof TypeError) {
-      return fail(new ValidationError("Unable to reach target URL."));
+      return fail(new ValidationError('Unable to reach target URL.'));
     }
 
     return fail(error);

@@ -1,8 +1,8 @@
-import { AuthError, ExternalApiError } from "@/lib/core/errors";
-import type { MarketingInsightReport, SaveInsightPayload } from "@/lib/core/domain";
-import { ApiClient } from "@/lib/infra/http/api-client";
-import { INSIGHT_METRIC_OPTIONS } from "@/lib/insights/metric-rules";
-import type { INotionRepository } from "@/lib/repositories/interfaces";
+import { AuthError, ExternalApiError } from '@/lib/core/errors';
+import type { MarketingInsightReport, SaveInsightPayload } from '@/lib/core/domain';
+import { ApiClient } from '@/lib/infra/http/api-client';
+import { INSIGHT_METRIC_OPTIONS } from '@/lib/insights/metric-rules';
+import type { INotionRepository } from '@/lib/repositories/interfaces';
 
 type NotionTextFragment = {
   plain_text?: string;
@@ -57,7 +57,7 @@ const DEFAULT_NOTION_FIELD_PROPERTY_MAP: Record<string, Record<string, unknown>>
   caption: { rich_text: {} },
   alt_text: { rich_text: {} },
   collaborators: { rich_text: {} },
-  "copyright_check_information{status}": { rich_text: {} },
+  'copyright_check_information{status}': { rich_text: {} },
   boost_eligibility_info: { rich_text: {} },
   boost_ads_list: { rich_text: {} },
   legacy_instagram_media_id: { rich_text: {} },
@@ -83,21 +83,21 @@ const DEFAULT_NOTION_FIELD_PROPERTY_MAP: Record<string, Record<string, unknown>>
 };
 
 export class NotionRepository implements INotionRepository {
-  private readonly oauthUrl = "https://api.notion.com/v1/oauth/token";
-  private readonly apiBase = "https://api.notion.com/v1";
+  private readonly oauthUrl = 'https://api.notion.com/v1/oauth/token';
+  private readonly apiBase = 'https://api.notion.com/v1';
 
   constructor(
     private readonly client: ApiClient,
     private readonly notionVersion: string,
     private readonly clientId: string,
-    private readonly clientSecret: string,
+    private readonly clientSecret: string
   ) {}
 
   public async exchangeCodeForToken(
     code: string,
-    redirectUri: string,
+    redirectUri: string
   ): Promise<{ accessToken: string; workspaceId: string; workspaceName: string }> {
-    const basic = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString("base64");
+    const basic = Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64');
 
     const payload = await this.client.requestJson<{
       access_token?: string;
@@ -105,13 +105,13 @@ export class NotionRepository implements INotionRepository {
       workspace_name?: string;
     }>({
       url: this.oauthUrl,
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Basic ${basic}`,
       },
       body: JSON.stringify({
-        grant_type: "authorization_code",
+        grant_type: 'authorization_code',
         code,
         redirect_uri: redirectUri,
       }),
@@ -120,18 +120,18 @@ export class NotionRepository implements INotionRepository {
     });
 
     if (!payload.access_token || !payload.workspace_id) {
-      throw new ExternalApiError("Invalid Notion OAuth response", 502);
+      throw new ExternalApiError('Invalid Notion OAuth response', 502);
     }
 
     return {
       accessToken: payload.access_token,
       workspaceId: payload.workspace_id,
-      workspaceName: payload.workspace_name ?? "Notion Workspace",
+      workspaceName: payload.workspace_name ?? 'Notion Workspace',
     };
   }
 
   public async listAvailablePages(
-    accessToken: string,
+    accessToken: string
   ): Promise<Array<{ id: string; title: string }>> {
     const pages = new Map<string, { id: string; title: string }>();
     const databasesByPage = new Map<
@@ -148,14 +148,14 @@ export class NotionRepository implements INotionRepository {
           next_cursor?: string | null;
         }>({
           url: `${this.apiBase}/search`,
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "Notion-Version": this.notionVersion,
-            "Content-Type": "application/json",
+            'Notion-Version': this.notionVersion,
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            filter: { property: "object", value: "page" },
+            filter: { property: 'object', value: 'page' },
             page_size: 100,
             ...(nextCursor ? { start_cursor: nextCursor } : {}),
           }),
@@ -164,7 +164,7 @@ export class NotionRepository implements INotionRepository {
         });
 
         for (const page of payload.results ?? []) {
-          if (page.object !== "page" || !page.id) {
+          if (page.object !== 'page' || !page.id) {
             continue;
           }
 
@@ -175,7 +175,7 @@ export class NotionRepository implements INotionRepository {
           });
         }
 
-        nextCursor = payload.has_more ? payload.next_cursor ?? undefined : undefined;
+        nextCursor = payload.has_more ? (payload.next_cursor ?? undefined) : undefined;
       } while (nextCursor);
 
       let databaseCursor: string | undefined;
@@ -186,14 +186,14 @@ export class NotionRepository implements INotionRepository {
           next_cursor?: string | null;
         }>({
           url: `${this.apiBase}/search`,
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "Notion-Version": this.notionVersion,
-            "Content-Type": "application/json",
+            'Notion-Version': this.notionVersion,
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            filter: { property: "object", value: "database" },
+            filter: { property: 'object', value: 'database' },
             page_size: 100,
             ...(databaseCursor ? { start_cursor: databaseCursor } : {}),
           }),
@@ -202,13 +202,13 @@ export class NotionRepository implements INotionRepository {
         });
 
         for (const database of payload.results ?? []) {
-          if (database.object !== "database" || !database.id) {
+          if (database.object !== 'database' || !database.id) {
             continue;
           }
 
           const normalizedDatabaseId = this.normalizePageId(database.id);
           const parentPageId =
-            database.parent?.type === "page_id" && database.parent.page_id
+            database.parent?.type === 'page_id' && database.parent.page_id
               ? this.normalizePageId(database.parent.page_id)
               : null;
 
@@ -229,14 +229,11 @@ export class NotionRepository implements INotionRepository {
           databasesByPage.set(parentPageId, existing);
         }
 
-        databaseCursor = payload.has_more ? payload.next_cursor ?? undefined : undefined;
+        databaseCursor = payload.has_more ? (payload.next_cursor ?? undefined) : undefined;
       } while (databaseCursor);
     } catch (error) {
-      if (
-        error instanceof ExternalApiError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        throw new AuthError("Notion token expired. Please connect Notion again.");
+      if (error instanceof ExternalApiError && (error.status === 401 || error.status === 403)) {
+        throw new AuthError('Notion token expired. Please connect Notion again.');
       }
 
       throw error;
@@ -246,7 +243,9 @@ export class NotionRepository implements INotionRepository {
       .sort((a, b) => a.title.localeCompare(b.title))
       .map((page) => ({
         ...page,
-        databases: (databasesByPage.get(page.id) ?? []).sort((a, b) => a.title.localeCompare(b.title)),
+        databases: (databasesByPage.get(page.id) ?? []).sort((a, b) =>
+          a.title.localeCompare(b.title)
+        ),
       }));
   }
 
@@ -260,28 +259,25 @@ export class NotionRepository implements INotionRepository {
     try {
       await this.client.requestJson<{ results?: unknown[] }>({
         url: `${this.apiBase}/blocks/${pageId}/children`,
-        method: "PATCH",
+        method: 'PATCH',
         headers: {
           Authorization: `Bearer ${args.accessToken}`,
-          "Notion-Version": this.notionVersion,
-          "Content-Type": "application/json",
+          'Notion-Version': this.notionVersion,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ children: [] }),
         timeoutMs: 20_000,
         retryCount: 1,
       });
     } catch (error) {
-      if (
-        error instanceof ExternalApiError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        throw new AuthError("Notion token expired. Please connect Notion again.");
+      if (error instanceof ExternalApiError && (error.status === 401 || error.status === 403)) {
+        throw new AuthError('Notion token expired. Please connect Notion again.');
       }
 
       throw error;
     }
 
-    return { message: "Insight report appended to Notion page" };
+    return { message: 'Insight report appended to Notion page' };
   }
 
   public async createDatabase(args: {
@@ -303,12 +299,12 @@ export class NotionRepository implements INotionRepository {
       };
 
       const uniqueFields = Array.from(
-        new Set(args.defaultFields.map((item) => item.trim()).filter((item) => item.length > 0)),
+        new Set(args.defaultFields.map((item) => item.trim()).filter((item) => item.length > 0))
       );
-      const usedPropertyNames = new Set<string>(["Title"]);
+      const usedPropertyNames = new Set<string>(['Title']);
 
       for (const fieldKey of uniqueFields) {
-        if (fieldKey === "id" || fieldKey === "Title" || fieldKey === "title") {
+        if (fieldKey === 'id' || fieldKey === 'Title' || fieldKey === 'title') {
           // Skip id and title as they're handled separately
           continue;
         }
@@ -331,20 +327,20 @@ export class NotionRepository implements INotionRepository {
         title?: NotionTextFragment[];
       }>({
         url: `${this.apiBase}/databases`,
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${args.accessToken}`,
-          "Notion-Version": this.notionVersion,
-          "Content-Type": "application/json",
+          'Notion-Version': this.notionVersion,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           parent: {
-            type: "page_id",
+            type: 'page_id',
             page_id: parentPageId,
           },
           title: [
             {
-              type: "text",
+              type: 'text',
               text: {
                 content: args.databaseTitle,
               },
@@ -361,7 +357,7 @@ export class NotionRepository implements INotionRepository {
       });
 
       if (!response.id) {
-        throw new ExternalApiError("Failed to create Notion database", 500);
+        throw new ExternalApiError('Failed to create Notion database', 500);
       }
 
       return {
@@ -369,11 +365,8 @@ export class NotionRepository implements INotionRepository {
         title: args.databaseTitle,
       };
     } catch (error) {
-      if (
-        error instanceof ExternalApiError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        throw new AuthError("Notion token expired. Please connect Notion again.");
+      if (error instanceof ExternalApiError && (error.status === 401 || error.status === 403)) {
+        throw new AuthError('Notion token expired. Please connect Notion again.');
       }
 
       throw error;
@@ -391,21 +384,21 @@ export class NotionRepository implements INotionRepository {
         title?: NotionTextFragment[];
       }>({
         url: `${this.apiBase}/pages`,
-        method: "POST",
+        method: 'POST',
         headers: {
           Authorization: `Bearer ${args.accessToken}`,
-          "Notion-Version": this.notionVersion,
-          "Content-Type": "application/json",
+          'Notion-Version': this.notionVersion,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           parent: {
-            type: "workspace",
+            type: 'workspace',
             workspace: true,
           },
           properties: {
             title: [
               {
-                type: "text",
+                type: 'text',
                 text: {
                   content: args.pageTitle,
                 },
@@ -418,7 +411,7 @@ export class NotionRepository implements INotionRepository {
       });
 
       if (!response.id) {
-        throw new ExternalApiError("Failed to create Notion page", 500);
+        throw new ExternalApiError('Failed to create Notion page', 500);
       }
 
       return {
@@ -426,11 +419,8 @@ export class NotionRepository implements INotionRepository {
         title: args.pageTitle,
       };
     } catch (error) {
-      if (
-        error instanceof ExternalApiError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        throw new AuthError("Notion token expired. Please connect Notion again.");
+      if (error instanceof ExternalApiError && (error.status === 401 || error.status === 403)) {
+        throw new AuthError('Notion token expired. Please connect Notion again.');
       }
 
       throw error;
@@ -449,10 +439,10 @@ export class NotionRepository implements INotionRepository {
         properties?: Record<string, NotionDatabaseProperty>;
       }>({
         url: `${this.apiBase}/databases/${databaseId}`,
-        method: "GET",
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${args.accessToken}`,
-          "Notion-Version": this.notionVersion,
+          'Notion-Version': this.notionVersion,
         },
         timeoutMs: 20_000,
         retryCount: 1,
@@ -480,15 +470,15 @@ export class NotionRepository implements INotionRepository {
           url?: string;
         }>({
           url: `${this.apiBase}/pages`,
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${args.accessToken}`,
-            "Notion-Version": this.notionVersion,
-            "Content-Type": "application/json",
+            'Notion-Version': this.notionVersion,
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             parent: {
-              type: "database_id",
+              type: 'database_id',
               database_id: databaseId,
             },
             properties,
@@ -498,26 +488,23 @@ export class NotionRepository implements INotionRepository {
         });
 
         if (!response.id) {
-          throw new ExternalApiError("Failed to create database page in Notion", 500);
+          throw new ExternalApiError('Failed to create database page in Notion', 500);
         }
 
         latestCreated = {
           id: response.id,
-          url: response.url ?? "",
+          url: response.url ?? '',
         };
       }
 
       if (!latestCreated) {
-        throw new ExternalApiError("No insight rows were generated for Notion export", 400);
+        throw new ExternalApiError('No insight rows were generated for Notion export', 400);
       }
 
       return latestCreated;
     } catch (error) {
-      if (
-        error instanceof ExternalApiError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        throw new AuthError("Notion token expired. Please connect Notion again.");
+      if (error instanceof ExternalApiError && (error.status === 401 || error.status === 403)) {
+        throw new AuthError('Notion token expired. Please connect Notion again.');
       }
 
       throw error;
@@ -527,7 +514,7 @@ export class NotionRepository implements INotionRepository {
   public async saveMediaDatabasePage(args: {
     accessToken: string;
     databaseId: string;
-    report: NonNullable<SaveInsightPayload["mediaReport"]>;
+    report: NonNullable<SaveInsightPayload['mediaReport']>;
   }): Promise<{ id: string; url: string }> {
     const databaseId = this.normalizePageId(args.databaseId);
 
@@ -536,10 +523,10 @@ export class NotionRepository implements INotionRepository {
         properties?: Record<string, NotionDatabaseProperty>;
       }>({
         url: `${this.apiBase}/databases/${databaseId}`,
-        method: "GET",
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${args.accessToken}`,
-          "Notion-Version": this.notionVersion,
+          'Notion-Version': this.notionVersion,
         },
         timeoutMs: 20_000,
         retryCount: 1,
@@ -567,15 +554,15 @@ export class NotionRepository implements INotionRepository {
           url?: string;
         }>({
           url: `${this.apiBase}/pages`,
-          method: "POST",
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${args.accessToken}`,
-            "Notion-Version": this.notionVersion,
-            "Content-Type": "application/json",
+            'Notion-Version': this.notionVersion,
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             parent: {
-              type: "database_id",
+              type: 'database_id',
               database_id: databaseId,
             },
             properties,
@@ -585,26 +572,23 @@ export class NotionRepository implements INotionRepository {
         });
 
         if (!response.id) {
-          throw new ExternalApiError("Failed to create database page in Notion", 500);
+          throw new ExternalApiError('Failed to create database page in Notion', 500);
         }
 
         latestCreated = {
           id: response.id,
-          url: response.url ?? "",
+          url: response.url ?? '',
         };
       }
 
       if (!latestCreated) {
-        throw new ExternalApiError("No media rows were generated for Notion export", 400);
+        throw new ExternalApiError('No media rows were generated for Notion export', 400);
       }
 
       return latestCreated;
     } catch (error) {
-      if (
-        error instanceof ExternalApiError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        throw new AuthError("Notion token expired. Please connect Notion again.");
+      if (error instanceof ExternalApiError && (error.status === 401 || error.status === 403)) {
+        throw new AuthError('Notion token expired. Please connect Notion again.');
       }
 
       throw error;
@@ -617,7 +601,7 @@ export class NotionRepository implements INotionRepository {
         {
           title: `Insight Report ${report.generatedAt}`,
           endTime: report.generatedAt,
-          metric: report.query.metrics.join(", "),
+          metric: report.query.metrics.join(', '),
           period: report.query.period,
           totalValue: 0,
           generatedAt: report.generatedAt,
@@ -643,7 +627,7 @@ export class NotionRepository implements INotionRepository {
         title: account.accountHandle ? `@${account.accountHandle}` : `Account ${index + 1}`,
         accountHandle: account.accountHandle,
         endTime,
-        metric: Array.from(metricTotals.keys()).join(", "),
+        metric: Array.from(metricTotals.keys()).join(', '),
         period: account.metricResults[0]?.period ?? report.query.period,
         totalValue,
         generatedAt: report.generatedAt,
@@ -657,9 +641,11 @@ export class NotionRepository implements INotionRepository {
     });
   }
 
-  private buildMediaRows(report: NonNullable<SaveInsightPayload["mediaReport"]>): Array<Record<string, unknown>> {
-    const hasItems = report.accounts.some(acc => acc.items && acc.items.length > 0);
-    
+  private buildMediaRows(
+    report: NonNullable<SaveInsightPayload['mediaReport']>
+  ): Array<Record<string, unknown>> {
+    const hasItems = report.accounts.some((acc) => acc.items && acc.items.length > 0);
+
     if (report.accounts.length === 0 || !hasItems) {
       return [
         {
@@ -668,27 +654,27 @@ export class NotionRepository implements INotionRepository {
         },
       ];
     }
-    
+
     // Attempt to map each media item to a clear row
-    return report.accounts.flatMap(account => 
+    return report.accounts.flatMap((account) =>
       account.items.map((item, index) => {
-        const rowTitle = account.accountHandle 
-            ? `@${account.accountHandle} Media ${index + 1}` 
-            : `Media ${index + 1}`;
-            
+        const rowTitle = account.accountHandle
+          ? `@${account.accountHandle} Media ${index + 1}`
+          : `Media ${index + 1}`;
+
         return {
           title: rowTitle,
           accountHandle: account.accountHandle,
           generatedAt: report.generatedAt,
-          ...item
+          ...item,
         };
       })
     );
   }
 
   private resolveLatestEndTime(
-    metricResults: MarketingInsightReport["accounts"][number]["metricResults"],
-    fallbackIso: string,
+    metricResults: MarketingInsightReport['accounts'][number]['metricResults'],
+    fallbackIso: string
   ): string {
     const latest = metricResults
       .flatMap((result) => result.points)
@@ -743,11 +729,11 @@ export class NotionRepository implements INotionRepository {
       properties?: Record<string, NotionDatabaseProperty>;
     }>({
       url: `${this.apiBase}/databases/${args.databaseId}`,
-      method: "PATCH",
+      method: 'PATCH',
       headers: {
         Authorization: `Bearer ${args.accessToken}`,
-        "Notion-Version": this.notionVersion,
-        "Content-Type": "application/json",
+        'Notion-Version': this.notionVersion,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         properties: propertiesToCreate,
@@ -775,24 +761,24 @@ export class NotionRepository implements INotionRepository {
   }
 
   private extractPropertyType(definition: Record<string, unknown>): string {
-    return Object.keys(definition)[0] ?? "rich_text";
+    return Object.keys(definition)[0] ?? 'rich_text';
   }
 
   private buildDatabasePropertyIndex(
-    properties: Record<string, NotionDatabaseProperty>,
+    properties: Record<string, NotionDatabaseProperty>
   ): Map<string, { name: string; type: string }> {
     const index = new Map<string, { name: string; type: string }>();
 
     for (const [name, property] of Object.entries(properties)) {
       const normalizedKey = this.normalizeFieldKey(name);
-      const type = property.type ?? "rich_text";
+      const type = property.type ?? 'rich_text';
 
       if (normalizedKey.length > 0 && !index.has(normalizedKey)) {
         index.set(normalizedKey, { name, type });
       }
 
-      if (type === "title") {
-        index.set("title", { name, type });
+      if (type === 'title') {
+        index.set('title', { name, type });
       }
     }
 
@@ -817,15 +803,15 @@ export class NotionRepository implements INotionRepository {
       }
     }
 
-    if (!Object.keys(properties).some((name) => args.propertyIndex.get("title")?.name === name)) {
-      const titleProperty = args.propertyIndex.get("title");
+    if (!Object.keys(properties).some((name) => args.propertyIndex.get('title')?.name === name)) {
+      const titleProperty = args.propertyIndex.get('title');
       if (titleProperty) {
         const fallbackTitle =
-          typeof args.row.title === "string" && args.row.title.trim().length > 0
+          typeof args.row.title === 'string' && args.row.title.trim().length > 0
             ? args.row.title
             : `Insight ${new Date().toISOString()}`;
 
-        const titleValue = this.toNotionPropertyValue("title", fallbackTitle);
+        const titleValue = this.toNotionPropertyValue('title', fallbackTitle);
         if (titleValue) {
           properties[titleProperty.name] = titleValue;
         }
@@ -840,26 +826,26 @@ export class NotionRepository implements INotionRepository {
       return null;
     }
 
-    if (type === "number") {
-      const parsed = typeof value === "number" ? value : Number(value);
+    if (type === 'number') {
+      const parsed = typeof value === 'number' ? value : Number(value);
       return Number.isFinite(parsed) ? { number: parsed } : null;
     }
 
-    if (type === "date") {
+    if (type === 'date') {
       const isoDate = this.toIsoDate(value);
       return isoDate ? { date: { start: isoDate } } : null;
     }
 
-    if (type === "checkbox") {
+    if (type === 'checkbox') {
       return { checkbox: Boolean(value) };
     }
 
-    if (type === "url") {
+    if (type === 'url') {
       const urlValue = this.toTextValue(value);
       return urlValue.length > 0 ? { url: urlValue } : null;
     }
 
-    if (type === "select") {
+    if (type === 'select') {
       const option = this.toTextValue(value);
       return option.length > 0 ? { select: { name: option.slice(0, 100) } } : null;
     }
@@ -869,11 +855,11 @@ export class NotionRepository implements INotionRepository {
       return null;
     }
 
-    if (type === "title") {
+    if (type === 'title') {
       return {
         title: [
           {
-            type: "text",
+            type: 'text',
             text: {
               content: text.slice(0, 1900),
             },
@@ -885,7 +871,7 @@ export class NotionRepository implements INotionRepository {
     return {
       rich_text: [
         {
-          type: "text",
+          type: 'text',
           text: {
             content: text.slice(0, 1900),
           },
@@ -899,7 +885,7 @@ export class NotionRepository implements INotionRepository {
       return Number.isFinite(value.getTime()) ? value.toISOString() : null;
     }
 
-    if (typeof value !== "string" && typeof value !== "number") {
+    if (typeof value !== 'string' && typeof value !== 'number') {
       return null;
     }
 
@@ -908,63 +894,66 @@ export class NotionRepository implements INotionRepository {
   }
 
   private toTextValue(value: unknown): string {
-    if (typeof value === "string") {
+    if (typeof value === 'string') {
       return value.trim();
     }
 
-    if (typeof value === "number" || typeof value === "boolean") {
+    if (typeof value === 'number' || typeof value === 'boolean') {
       return String(value);
     }
 
     if (Array.isArray(value)) {
-      return value.map((item) => this.toTextValue(item)).filter((item) => item.length > 0).join(", ");
+      return value
+        .map((item) => this.toTextValue(item))
+        .filter((item) => item.length > 0)
+        .join(', ');
     }
 
-    if (typeof value === "object") {
+    if (typeof value === 'object') {
       try {
         return JSON.stringify(value);
       } catch {
-        return "";
+        return '';
       }
     }
 
-    return "";
+    return '';
   }
 
   private normalizeFieldKey(value: string): string {
     return value
       .trim()
-      .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-      .replace(/[\s-]+/g, "_")
+      .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+      .replace(/[\s-]+/g, '_')
       .toLowerCase();
   }
 
   private toHumanReadableFieldName(fieldKey: string): string {
     return fieldKey
       .trim()
-      .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-      .replace(/[_-]+/g, " ")
-      .split(" ")
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/[_-]+/g, ' ')
+      .split(' ')
       .filter((item) => item.length > 0)
       .map((item) => item.charAt(0).toUpperCase() + item.slice(1))
-      .join(" ");
+      .join(' ');
   }
 
   private normalizePageId(raw: string): string {
-    return raw.trim().replace(/-/g, "");
+    return raw.trim().replace(/-/g, '');
   }
 
   private extractPageTitle(page: NotionPageObject): string {
     const properties = page.properties ?? {};
 
     for (const property of Object.values(properties)) {
-      if (property?.type !== "title") {
+      if (property?.type !== 'title') {
         continue;
       }
 
       const title = (property.title ?? [])
-        .map((item) => item.plain_text ?? "")
-        .join("")
+        .map((item) => item.plain_text ?? '')
+        .join('')
         .trim();
 
       if (title.length > 0) {
@@ -972,20 +961,20 @@ export class NotionRepository implements INotionRepository {
       }
     }
 
-    return `Page ${this.normalizePageId(page.id ?? "")}`;
+    return `Page ${this.normalizePageId(page.id ?? '')}`;
   }
 
   private extractDatabaseTitle(database: NotionDatabaseObject): string {
     const title = (database.title ?? [])
-      .map((item) => item.plain_text ?? "")
-      .join("")
+      .map((item) => item.plain_text ?? '')
+      .join('')
       .trim();
 
     if (title.length > 0) {
       return title;
     }
 
-    return `Database ${this.normalizePageId(database.id ?? "")}`;
+    return `Database ${this.normalizePageId(database.id ?? '')}`;
   }
 
   public async validateDatabaseProperties(args: {
@@ -993,17 +982,17 @@ export class NotionRepository implements INotionRepository {
     databaseId: string;
   }): Promise<{ isValid: boolean; missingProperties: string[] }> {
     const databaseId = this.normalizePageId(args.databaseId);
-    const requiredProperties = ["Title"];
+    const requiredProperties = ['Title'];
 
     try {
       const response = await this.client.requestJson<{
         properties?: Record<string, unknown>;
       }>({
         url: `${this.apiBase}/databases/${databaseId}`,
-        method: "GET",
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${args.accessToken}`,
-          "Notion-Version": this.notionVersion,
+          'Notion-Version': this.notionVersion,
         },
         timeoutMs: 15_000,
         retryCount: 1,
@@ -1011,7 +1000,7 @@ export class NotionRepository implements INotionRepository {
 
       const existingProperties = Object.keys(response.properties ?? {});
       const missingProperties = requiredProperties.filter(
-        (prop: string) => !existingProperties.includes(prop),
+        (prop: string) => !existingProperties.includes(prop)
       );
 
       return {
@@ -1019,15 +1008,11 @@ export class NotionRepository implements INotionRepository {
         missingProperties,
       };
     } catch (error) {
-      if (
-        error instanceof ExternalApiError &&
-        (error.status === 401 || error.status === 403)
-      ) {
-        throw new AuthError("Notion token expired. Please connect Notion again.");
+      if (error instanceof ExternalApiError && (error.status === 401 || error.status === 403)) {
+        throw new AuthError('Notion token expired. Please connect Notion again.');
       }
 
       throw error;
     }
   }
-
 }

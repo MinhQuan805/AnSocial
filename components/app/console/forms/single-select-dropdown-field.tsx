@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Fragment, useMemo, useState } from "react";
-import { ChevronDown, Search, X } from "lucide-react";
+import { Fragment, useMemo, useState } from 'react';
+import { ChevronDown, Search, X } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,9 +13,9 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils/cn";
+} from '@/components/ui/dropdown-menu';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils/cn';
 
 export type SingleSelectDropdownOption = {
   value: string;
@@ -48,7 +48,7 @@ type OptionGroup = {
   options: SingleSelectDropdownOption[];
 };
 
-const DEFAULT_GROUP_KEY = "__default__";
+const DEFAULT_GROUP_KEY = '__default__';
 
 export function SingleSelectDropdownField({
   id,
@@ -57,18 +57,18 @@ export function SingleSelectDropdownField({
   value,
   options,
   onChange,
-  placeholder = "Select an option",
+  placeholder = 'Select an option',
   disabled = false,
   triggerClassName,
   contentClassName,
   searchable = false,
-  searchPlaceholder = "Search...",
+  searchPlaceholder = 'Search...',
 }: SingleSelectDropdownFieldProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value),
-    [options, value],
+    [options, value]
   );
 
   const filteredOptions = useMemo(() => {
@@ -78,7 +78,7 @@ export function SingleSelectDropdownField({
       (option) =>
         option.label.toLowerCase().includes(query) ||
         (option.description?.toLowerCase().includes(query) ?? false) ||
-        option.value.toLowerCase().includes(query),
+        option.value.toLowerCase().includes(query)
     );
   }, [options, searchable, searchQuery]);
 
@@ -105,9 +105,17 @@ export function SingleSelectDropdownField({
 
   return (
     <div className="space-y-2">
-      {label ? <Label htmlFor={id} className={labelClassName}>{label}</Label> : null}
+      {label ? (
+        <Label htmlFor={id} className={labelClassName}>
+          {label}
+        </Label>
+      ) : null}
 
-      <DropdownMenu onOpenChange={(open) => { if (!open) setSearchQuery(""); }}>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          if (!open) setSearchQuery('');
+        }}
+      >
         <DropdownMenuTrigger asChild>
           <Button
             id={id}
@@ -115,19 +123,17 @@ export function SingleSelectDropdownField({
             variant="outline"
             disabled={disabled}
             className={cn(
-              "h-11 w-full justify-between gap-2",
-              !selectedOption && "text-muted-foreground",
-              triggerClassName,
+              'h-11 w-full justify-between gap-2',
+              !selectedOption && 'text-muted-foreground',
+              triggerClassName
             )}
           >
-            <span className="truncate text-left">
-              {selectedOption?.label ?? placeholder}
-            </span>
+            <span className="truncate text-left">{selectedOption?.label ?? placeholder}</span>
             <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" className={cn("max-h-80", contentClassName)}>
+        <DropdownMenuContent align="start" className={cn('max-h-80', contentClassName)}>
           {searchable ? (
             <div className="sticky top-0 z-10 bg-popover px-2 pb-2 pt-1">
               <div className="relative">
@@ -144,7 +150,7 @@ export function SingleSelectDropdownField({
                 {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => setSearchQuery("")}
+                    onClick={() => setSearchQuery('')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     <X className="h-3 w-3" />
