@@ -455,11 +455,16 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
     }
 
     const nextReport = payload as HttpRequestReport;
+
+    if (nextReport.response.status < 200 || nextReport.response.status >= 300) {
+      setHttpReport(null);
+      throw new Error(
+        `HTTP request failed (${nextReport.response.status} ${nextReport.response.statusText}).`
+      );
+    }
+
     setHttpReport(nextReport);
     instagram.clearReports();
-    setStatus(
-      `HTTP request completed (${nextReport.response.status} ${nextReport.response.statusText}).`
-    );
   };
 
   const runAnalysis = async () => {
@@ -630,14 +635,14 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
       anchor.download = `ana-social-workflow-${Date.now()}.json`;
       anchor.click();
       URL.revokeObjectURL(objectUrl);
-
-      setStatus('Exported n8n workflow JSON.');
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unknown error.');
     } finally {
       setExporting(false);
     }
   };
+
+  const shouldShowOutputCard = instagram.isInstagramOAuthLinked || Boolean(httpReport);
 
   return (
     <SidebarProvider defaultOpen>
@@ -750,17 +755,21 @@ export function ConsoleApp({ session }: ConsoleAppProps) {
               exportN8n={exportN8n}
             />
 
-            <OutputCard
-              isHttpMode={!instagram.isInstagramOAuthLinked}
-              isInsightEndpoint={instagram.isInsightEndpoint}
-              isMediaEndpoint={instagram.isMediaEndpoint}
-              httpReport={httpReport}
-              insightReport={instagram.insightReport}
-              mediaReport={instagram.mediaReport}
-              mediaTableFields={instagram.mediaTableFields}
-              mediaRows={instagram.mediaRows}
-              formatMediaCellValue={instagram.formatMediaCellValue}
-            />
+            {shouldShowOutputCard ? (
+              <OutputCard
+                isHttpMode={!instagram.isInstagramOAuthLinked}
+                isInsightEndpoint={instagram.isInsightEndpoint}
+                isMediaEndpoint={instagram.isMediaEndpoint}
+                httpReport={httpReport}
+                insightReport={instagram.insightReport}
+                mediaReport={instagram.mediaReport}
+                mediaTableFields={instagram.mediaTableFields}
+                mediaRows={instagram.mediaRows}
+                formatMediaCellValue={instagram.formatMediaCellValue}
+                onSave={saveResult}
+                isSaving={saving}
+              />
+            ) : null}
           </div>
         </main>
       </SidebarInset>

@@ -615,7 +615,7 @@ export function HttpRequestCard({
           Run
         </Button>
 
-        {status ? (
+        {isOAuthMode && status ? (
           <Alert className="border-emerald-300/80 bg-emerald-50 text-emerald-900">
             <CheckCircle2 className="h-4 w-4" />
             <AlertTitle>Success</AlertTitle>
@@ -623,7 +623,7 @@ export function HttpRequestCard({
           </Alert>
         ) : null}
 
-        {error ? (
+        {isOAuthMode && error ? (
           <Alert variant="destructive">
             <CircleAlert className="h-4 w-4" />
             <AlertTitle>Request failed</AlertTitle>

@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo } from 'react';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert, Download, Upload } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -16,6 +17,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { HttpRequestReport, InsightReport, MediaReport } from '@/components/app/console/types';
+import { HttpResponseNotionTable } from '@/components/app/console/output/http-response-notion-table';
 import {
   type JsonMappingField,
   extractJsonMappingFields,
@@ -36,6 +38,10 @@ interface OutputCardProps {
     item: Record<string, unknown>;
   }>;
   formatMediaCellValue: (value: unknown) => string;
+  onSave?: () => void | Promise<void>;
+  onImport?: () => void | Promise<void>;
+  isSaving?: boolean;
+  isImporting?: boolean;
 }
 
 interface RawPayloadWithMappingProps {
@@ -94,6 +100,10 @@ export function OutputCard({
   mediaTableFields,
   mediaRows,
   formatMediaCellValue,
+  onSave,
+  onImport,
+  isSaving = false,
+  isImporting = false,
 }: OutputCardProps) {
   const metricColumns = insightReport
     ? Array.from(
@@ -140,54 +150,59 @@ export function OutputCard({
   return (
     <Card className="border-border/80">
       <CardHeader>
-        <CardTitle className="text-xl">
-          {isHttpMode
-            ? 'HTTP Request Output'
-            : isInsightEndpoint
-              ? 'Account Insight Output'
-              : 'Account Media Output'}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-xl">
+            {isHttpMode
+              ? 'HTTP Request Output'
+              : isInsightEndpoint
+                ? 'Account Insight Output'
+                : 'Account Media Output'}
+          </CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onSave}
+              disabled={isSaving || (!isHttpMode && !insightReport && !mediaReport) || (isHttpMode && !httpReport)}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Save
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onImport}
+              disabled={isImporting}
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        {isHttpMode && !httpReport ? (
-          <div className="rounded-md border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-500">
-            No response yet. Configure request and press Run.
-          </div>
-        ) : isHttpMode && httpReport ? (
-          <Tabs defaultValue="summary">
+        {isHttpMode && httpReport ? (
+          <Tabs defaultValue="table">
             <TabsList>
-              <TabsTrigger value="summary">Summary</TabsTrigger>
+              <TabsTrigger value="table">Table</TabsTrigger>
               <TabsTrigger value="raw">Raw Response</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="summary" className="space-y-3">
-              <div className="grid gap-2 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge>{httpReport.request.method}</Badge>
-                  <Badge>{httpReport.response.status}</Badge>
-                  <span className="text-zinc-600">{httpReport.response.statusText}</span>
-                </div>
-                <div>
-                  <p className="text-xs text-zinc-500">Request URL</p>
-                  <p className="break-all font-mono text-xs text-zinc-900">
-                    {httpReport.request.url}
-                  </p>
-                </div>
-                {(httpReport.request.params?.length ?? 0) > 0 ? (
-                  <div>
-                    <p className="text-xs text-zinc-500">Query Parameters</p>
-                    <p className="break-all font-mono text-xs text-zinc-900">
-                      {httpReport.request.params
-                        ?.map((item) => `${item.key}=${item.value}`)
-                        .join('&')}
-                    </p>
-                  </div>
-                ) : null}
-                <div>
-                  <p className="text-xs text-zinc-500">Response Time</p>
-                  <p className="text-xs text-zinc-900">{formatDateTime(httpReport.generatedAt)}</p>
-                </div>
+            <TabsContent value="table" className="space-y-3">
+              <div className="rounded-xl border border-border/70 bg-card px-3 py-2 text-sm text-foreground">
+                <p>
+                  <span className="font-semibold">Status:</span> {httpReport.response.status}{' '}
+                  {httpReport.response.statusText}
+                </p>
+                <p className="mt-1 truncate text-xs text-muted-foreground" title={httpReport.request.url}>
+                  {httpReport.request.url}
+                </p>
               </div>
+
+              <HttpResponseNotionTable
+                responseData={httpReport.response.data}
+                requestUrl={httpReport.request.url}
+              />
             </TabsContent>
 
             <TabsContent value="raw">

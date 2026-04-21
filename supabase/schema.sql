@@ -1,4 +1,3 @@
--- Ana Social Schema v2 (Google Auth + Provider Registry)
 -- Migration from Session-based auth to Google Auth + Multi-Provider
 -- Canonical schema for this project (Google login + provider connections)
 
